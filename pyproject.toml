@@ -5,7 +5,26 @@ description = "Personal AI layer for my own machine: voice orchestrator, vision 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "numpy>=2",
+    "scikit-learn>=1.9",
+]
+
+[project.optional-dependencies]
+nlu = [
+    "sentence-transformers>=6",
+]
+voice = [
+    "faster-whisper>=1.2 ; sys_platform == 'win32'",
+    "nvidia-cublas-cu12>=12.9.2.10 ; sys_platform == 'win32'",
+    "nvidia-cudnn-cu12>=9,<10 ; sys_platform == 'win32'",
+    "sounddevice>=0.5 ; sys_platform == 'win32'",
+]
+train = [
+    "onnx>=1.17",
+    "onnxscript>=0.7.2",
+    "torch>=2.6",
+]
 
 [dependency-groups]
 dev = [
@@ -21,7 +40,7 @@ build-backend = "uv_build"
 module-root = ""
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]

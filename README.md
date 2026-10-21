@@ -6,9 +6,11 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 0 done — the shared core every module will run on: an event bus, the module interface and basic
-> memory, with tests and CI. No ML modules yet; next is the voice orchestrator (Phase 1). The architecture, the ML
-> approach for each module and the phased build order are written up in [ROADMAP.md](ROADMAP.md).
+> **Status:** Phase 1 in progress — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
+> Whisper on the GPU, intent recognition in Russian and English (92.8% on held-out phrases, 90.1% through speech) and
+> 14 actions on Windows. The wake-word model is being trained from scratch on my own recordings. Phase 0 — the event
+> bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
+> phased build order are written up in [ROADMAP.md](ROADMAP.md).
 
 ## Why
 
@@ -62,9 +64,11 @@ class Echo(Module):
 | `mobile-companion` | Push notifications and remote approval when away from the machine |
 | `resume-builder` | Drafts resume bullet points from commit history and finished modules |
 
-## Tech stack (planned)
+## Tech stack
 
-Python · faster-whisper · HuggingFace Transformers · a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma · SQLite · FastAPI · React
+In use: Python · PyTorch · ONNX Runtime · faster-whisper · sentence-transformers · scikit-learn · NumPy · SQLite · sounddevice · Windows API (ctypes)
+
+Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma · FastAPI · React
 
 ## Project structure
 
@@ -74,10 +78,13 @@ Python · faster-whisper · HuggingFace Transformers · a vision-language model 
 | `aiforme/core/bus.py` | Event bus on SQLite: publish, per-module cursors, atomic completion |
 | `aiforme/core/module.py` | The `Module` interface and the loop that runs modules against the bus |
 | `aiforme/core/memory.py` | Basic long-term memory: JSON values under (namespace, key) |
-| `aiforme/__main__.py` | Command line to publish events and tail the bus by hand |
+| `aiforme/voice_orchestrator/` | Phase 1: listener, Whisper, intent classifier, Windows actions — [its README](aiforme/voice_orchestrator/README.md) has the results |
+| `aiforme/wakeword/` | Own wake-word model: recording tool, synthetic data, augmentation, CNN training, ONNX detector |
+| `eval/results/` | Every evaluation as JSON, including each test error |
+| `aiforme/__main__.py` | Command line: `run` the assistant, `say` a typed command, publish and tail events |
 | `tests/` | pytest suite, run in CI on Windows and Linux |
 | `ROADMAP.md` | Full plan: ML approach per module, architecture, tech stack, phased build order |
-| `modules/` | One folder per module, built out as each phase starts |
+| `modules/` | READMEs of the modules not started yet; a started module moves into `aiforme/` |
 | `.env.example` | Required environment variables — copy to `.env` |
 
 ## Quick start
@@ -85,8 +92,9 @@ Python · faster-whisper · HuggingFace Transformers · a vision-language model 
 Using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv sync
+uv sync --all-extras          # or plain `uv sync` for the core and the tests
 uv run pytest -q
+uv run python -m aiforme run  # the voice assistant, see aiforme/voice_orchestrator/README.md
 ```
 
 Watch the bus by hand (state lives in `data/`, or in `AIFORME_DATA_DIR` if set):
