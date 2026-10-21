@@ -1,35 +1,43 @@
-# AIForMe
+# AI For Me
 
-Персональный ИИ-слой поверх своего ПК: голосовой оркестратор, автопилот режимов (код/игра/встречи), vision-агент для управления любым приложением, финансовый трекер (зарплата, налоги, цели, расходы по OCR), security watchdog, учебный трекер и единый семантический поиск по всей своей цифровой жизни.
+A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-Это не скрипт с десятком `if`, а платформа: каждый модуль — отдельный сервис/пакет с собственной ML-частью (классификация интентов, OCR+NLP, vision-agent, anomaly detection, active learning), которые общаются через общую шину событий и единую память (knowledge graph).
+Status: planning stage. The architecture, the ML approach for each module and the phased build order are written up in [ROADMAP.md](ROADMAP.md); implementation starts with the voice orchestrator (Phase 1).
 
-> Статус: ранняя стадия проектирования. Полный план — в [ROADMAP.md](ROADMAP.md).
+## Why
 
-## Зачем
+Most "AI assistant" side projects are a thin wrapper around a single LLM call. This one is a set of independent ML subsystems wired together by a shared event bus and a common memory — intent classification with an active-learning feedback loop, a vision-language agent that acts from screenshots, OCR and categorization for expense tracking, anomaly detection for system security, a knowledge graph for long-term memory — each with its own baseline, its own evaluation, and a reason to exist on its own.
 
-Личный проект для портфолио ML-инженера: не обёртка над одним API, а система из нескольких независимых ML-подсистем (STT/intent classification, vision+LLM agent, OCR+categorization, anomaly detection, active learning loop, knowledge graph memory), которые вместе решают реальные повседневные задачи.
+## Planned modules
 
-## Модули
-
-| Модуль | Что делает |
+| Module | What it will do |
 |---|---|
-| `voice-orchestrator` | STT + intent classification + выполнение команд на ПК |
-| `mode-autopilot` | Детект режима (код/игра/встреча через календарь) и смена окружения |
-| `vision-agent` | Скриншот + VLM — произвольные действия в любом приложении |
-| `active-learning` | Замкнутый цикл обучения intent-классификатора на правках пользователя |
-| `security-watchdog` | Anomaly detection по процессам/сети |
-| `password-vault` | Локальный зашифрованный менеджер паролей + проверка утечек |
-| `finance-tracker` | Смены/зарплата/налоги/цели + расходы через OCR скриншотов |
-| `learning-tracker` | Граф изучаемых тем (код, универ) + авто-флешкарты и квизы |
-| `memory-graph` | Долгосрочная память: граф знаний (проекты/люди/привычки) |
-| `universal-search` | Семантический поиск по всем источникам сразу |
-| `dashboard` | UI: что ИИ делает и почему, финансы, обучение, логи |
-| `mobile-companion` | Пуши/подтверждения/просмотр дашборда с телефона |
-| `resume-builder` | Автогенерация буллет-поинтов резюме из коммитов/проектов |
+| `voice-orchestrator` | Wake word + STT + intent classification → executes commands on the machine |
+| `mode-autopilot` | Detects context (coding / gaming / meeting via calendar) and switches the environment |
+| `vision-agent` | Screenshot + a vision-language model → acts in any application, not just pre-defined intents |
+| `active-learning` | Logs misclassified commands, retrains the intent classifier, tracks accuracy over time |
+| `security-watchdog` | Anomaly detection over running processes and network connections |
+| `password-vault` | Local encrypted password store with breach checks |
+| `finance-tracker` | Work shifts in the calendar → pay/tax calculation and savings goals; receipt screenshots → OCR'd, categorized expenses |
+| `learning-tracker` | Builds a topic graph from what I study (course material, tutorials), generates spaced-repetition flashcards |
+| `memory-graph` | Long-term memory as a knowledge graph (projects, people, habits), shared across modules |
+| `universal-search` | Semantic search across code, notes, clipboard history and learning material at once |
+| `dashboard` | Shows what the assistant did and why, plus finance/learning/security widgets |
+| `mobile-companion` | Push notifications and remote approval when away from the machine |
+| `resume-builder` | Drafts resume bullet points from commit history and finished modules |
 
-Подробности, архитектура и порядок разработки — в [ROADMAP.md](ROADMAP.md).
+## Tech stack (planned)
 
-## Лицензия
+Python · faster-whisper · HuggingFace Transformers · a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma · SQLite · FastAPI · React
 
-MIT (см. [LICENSE](LICENSE))
+## Project structure
+
+| Path | Purpose |
+|---|---|
+| `ROADMAP.md` | Full plan: ML approach per module, architecture, tech stack, phased build order |
+| `modules/` | One folder per module, built out as each phase starts |
+| `.env.example` | Required environment variables — copy to `.env` |
+
+## Roadmap
+
+Ten phases, from a voice-command MVP through the vision agent, finance tracking and the security watchdog to a knowledge-graph memory, a dashboard and a mobile companion. Full detail, including the ML approach for every module, is in [ROADMAP.md](ROADMAP.md).

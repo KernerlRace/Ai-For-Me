@@ -1,3 +1,3 @@
-# security watchdog
+# Security Watchdog
 
-Статус: planned (см. корневой ROADMAP.md, Phase соответствующая модулю).
+Status: planned. See the root [ROADMAP.md](../../ROADMAP.md) for the ML approach and which phase this module belongs to.

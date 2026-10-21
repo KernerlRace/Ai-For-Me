@@ -1,99 +1,99 @@
 # ROADMAP
 
-## Видение
+## Vision
 
-Персональный ИИ, который живёт на ПК и:
-- слушает голосовые команды и управляет системой,
-- сам переключает окружение под контекст (код / игра / встреча),
-- видит экран и умеет работать в любом приложении, а не только по заранее прописанным командам,
-- учится на своих же ошибках (активное обучение классификатора интентов),
-- ведёт финансы (смены, зарплата, налоги, цели, расходы по скриншотам),
-- следит за безопасностью системы,
-- помогает с учёбой/обучением и собирает всё это в единую память с семантическим поиском.
+A personal AI that lives on the machine and:
+- listens to voice commands and controls the system,
+- switches the environment on its own depending on context (coding / gaming / a meeting),
+- sees the screen and can act inside any application, not only through pre-defined commands,
+- learns from its own mistakes (active learning for the intent classifier),
+- tracks finances (shifts, pay, taxes, savings goals, receipt screenshots),
+- watches the system for security anomalies,
+- helps with studying, and ties all of this into one memory with semantic search over it.
 
-Цель как портфолио-проекта: показать полный ML lifecycle (данные → обучение → оценка → продакшн → фидбек-луп), а не только интеграцию готовых API.
+As a portfolio project, the goal is to show a full ML lifecycle — data, training, evaluation, deployment, feedback loop — rather than a wrapper around a single API.
 
 ---
 
-## Модули и что в них ML
+## Modules and the ML inside them
 
-### 1. Voice Orchestrator (ядро)
-- Wake word (дообученная CNN или `openWakeWord`)
-- STT: `faster-whisper` локально
-- NLU: дообученный классификатор интентов (DistilBERT/embeddings) + slot filling
-- Action layer: выполнение интентов (открыть приложение, найти файл, диктовка текста)
+### 1. Voice Orchestrator (core)
+- Wake word (a small fine-tuned CNN, or `openWakeWord`)
+- STT: `faster-whisper`, run locally
+- NLU: a fine-tuned intent classifier (DistilBERT/embeddings) with slot filling
+- Action layer: executes the recognized intent (open an app, find a file, dictate text)
 
 ### 2. Mode Autopilot
-- Детект активного контекста: запущенные процессы (IDE/игра), календарь (Google Calendar API)
-- Правила смены окружения: авто-открытие нужных окон/терминалов/докеров под проект, game-mode (закрытие фоновых процессов), DND перед встречей
-- Восстановление layout окон per-проект
+- Detects the active context: running processes (IDE/game), calendar events (Google Calendar API)
+- Rules for switching the environment: opens the right windows/terminals/containers for a project, enables a game mode (closes background processes), sets do-not-disturb before a meeting
+- Restores the window layout per project
 
-### 3. Vision Agent (ключевая ML-фича)
-- Скриншот экрана → VLM (vision-language model) → план действий → выполнение через клики/клавиатуру
-- Используется, когда нет готового интента — агент "видит" и действует как человек
-- То же OCR-ядро переиспользуется для finance-tracker (чтение скриншотов трат)
+### 3. Vision Agent (the centerpiece)
+- Screenshot → vision-language model → an action plan → executed through clicks/keystrokes
+- Used whenever there is no matching pre-defined intent — the agent "sees" and acts like a person would
+- The same OCR core is reused by the finance tracker to read expense screenshots
 
 ### 4. Active Learning Loop
-- Лог всех случаев, когда пользователь поправил распознанную команду
-- Периодическое дообучение intent-классификатора на этих примерах
-- Трекинг метрик точности по времени (реальный ML lifecycle, не разовое обучение)
+- Logs every case where the user corrected a misrecognized command
+- Periodically retrains the intent classifier on these corrections
+- Tracks accuracy over time — a real ML lifecycle, not a one-off training run
 
 ### 5. Security Watchdog
-- Мониторинг процессов/сетевых соединений
-- Anomaly detection модель (isolation forest / autoencoder) на базовом профиле "нормального" поведения системы
-- Алерты голосом/пушем
+- Monitors running processes and network connections
+- An anomaly detection model (isolation forest / autoencoder) trained on a baseline of "normal" system behavior
+- Alerts by voice or push notification
 
 ### 6. Password Vault
-- Локальное зашифрованное хранилище (AES, мастер-пароль)
-- Проверка на утечки (k-anonymity запрос в HIBP-подобный сервис, без отправки самого пароля)
-- Автозаполнение через локальный helper
+- Local encrypted store (AES, master password)
+- Breach checks (k-anonymity query against a HIBP-style service, without ever sending the password itself)
+- Autofill through a local helper
 
 ### 7. Finance Tracker
-- Календарь: тип событий "рабочая смена" (часы, ставка) → авто-расчёт зарплаты с вычетом налогов
-- Цели накоплений: прогресс, прогноз по текущему темпу
-- Расходы: скриншот операции → OCR → классификатор категории (еда/транспорт/подписки) → запись в БД
-- Дашборд: доход vs расходы, аудит подписок (повторяющиеся платежи, которые давно не использовались)
+- Calendar event type "work shift" (hours, rate) → automatic pay calculation with tax deducted
+- Savings goals: progress and a forecast based on the current pace
+- Expenses: a screenshot of a transaction → OCR → a category classifier (food/transport/subscriptions) → stored
+- Dashboard: income vs. expenses, a subscription audit (recurring payments not used in a while)
 
 ### 8. Learning Tracker
-- Граф изучаемых тем: автоматическое построение из того, что смотришь (ютуб-туториалы по коду) + материалы универа
-- Авто-флешкарты / spaced repetition из конспектов и статей
-- Голосовой самоопрос перед экзаменом
-- Саммаризация учебных материалов
+- A topic graph built automatically from what I study (coding tutorials) plus course material
+- Auto-generated flashcards / spaced repetition from notes and articles
+- A voice self-quiz before an exam
+- Summarization of study material
 
 ### 9. Memory / Knowledge Graph
-- Структурированная долгосрочная память (не просто vector store): сущности — проекты, люди, привычки, темы — и связи между ними
-- Используется всеми модулями как общий контекст
+- Structured long-term memory, not just a vector store — entities (projects, people, habits, topics) and the relations between them
+- Used by every other module as shared context
 
 ### 10. Universal Search
-- Единый семантический поиск поверх: кода, заметок, буфера обмена, учебных материалов, истории команд
-- Эмбеддинги + локальная vector DB (Chroma/FAISS)
+- One semantic search over code, notes, clipboard history, study material and command history
+- Embeddings + a local vector DB (Chroma/FAISS)
 
 ### 11. Dashboard
-- UI с логом действий ИИ и причин ("почему он это сделал")
-- Финансовые виджеты, прогресс обучения, статус режима, security-алерты
+- A UI with a log of what the assistant did and why
+- Finance widgets, learning progress, current mode, security alerts
 
 ### 12. Mobile Companion
-- Пуши и запросы подтверждения действий, когда не за ПК
-- Просмотр дашборда с телефона
+- Push notifications and action-approval requests while away from the machine
+- A remote view of the dashboard
 
 ### 13. Resume Builder
-- Анализ коммитов/проектов → авто-черновики буллет-поинтов резюме
+- Analyzes commits/projects and drafts resume bullet points
 
-### Доп. мелкие фичи
-- Семантический поиск по буферу обмена (часть Universal Search)
-- Голосовые заметки на лету → Memory Graph
-- Авто-бэкап перед рискованным git (rebase/reset/force-push)
-- Health-nudge (долгие сессии без перерыва)
-- Пост-геймовый саммари (Dota 2 — OpenDota/Steam API; World of Tanks — Wargaming API)
-- Code review помощник на коммитах до пуша
+### Smaller features
+- Semantic search over clipboard history (part of Universal Search)
+- Voice notes on the fly → Memory Graph
+- Auto-backup before a risky git operation (rebase/reset/force-push)
+- Health nudges after long sessions without a break
+- Post-match summaries (Dota 2 via OpenDota/Steam API, World of Tanks via the Wargaming API)
+- A code-review assistant that comments on commits before they are pushed
 
 ---
 
-## Архитектура (высокоуровнево)
+## Architecture (high level)
 
 ```
                      ┌───────────────┐
-                     │   Dashboard   │  (UI, лог действий)
+                     │   Dashboard   │  (UI, action log)
                      └───────┬───────┘
                              │
                      ┌───────┴───────┐
@@ -103,7 +103,7 @@
         ┌────────────────┘   │   └────────────────┐
 ┌───────┴───────┐   ┌────────┴────────┐   ┌────────┴────────┐
 │ Voice/Intent   │   │  Mode Autopilot  │   │  Vision Agent   │
-│ (STT + NLU)    │   │  (процессы+cal)  │   │ (screenshot+VLM)│
+│ (STT + NLU)    │   │ (processes+cal)  │   │ (screenshot+VLM)│
 └───────┬────────┘   └────────┬────────┘   └────────┬────────┘
         │                     │                      │
         └──────────┬──────────┴──────────┬───────────┘
@@ -115,72 +115,72 @@
             └───────────────┘     └────────────────┘
 ```
 
-Каждый модуль — отдельный процесс/пакет, общаются через локальную шину событий (например, Redis pub/sub или просто SQLite + polling на старте, с миграцией на очередь позже).
+Each module is its own process/package, talking over a local event bus (Redis pub/sub, or just SQLite with polling to start, migrating to a proper queue later).
 
-## Стек (черновой)
+## Stack (draft)
 
-- **Язык ядра**: Python (ML-компоненты, оркестрация)
+- **Core language**: Python (ML components, orchestration)
 - **STT**: faster-whisper
-- **NLU**: HuggingFace transformers (дообученный DistilBERT/MiniLM), либо sentence-embeddings + классический классификатор
-- **Vision agent**: локальная/облачная VLM + action-executor (pyautogui / Win32 API)
-- **OCR**: Tesseract или PaddleOCR
-- **Vector DB**: Chroma или FAISS
-- **Anomaly detection**: scikit-learn (IsolationForest) → потом autoencoder
-- **Dashboard**: FastAPI backend + React/Next.js фронт (или проще — локальный Tauri/Electron)
-- **Mobile companion**: простое React Native / push через Telegram-бота на первых порах (намного быстрее MVP)
-- **Хранилище**: SQLite локально (переход на Postgres при необходимости)
-- **Шифрование vault**: libsodium / AES-GCM
+- **NLU**: HuggingFace transformers (a fine-tuned DistilBERT/MiniLM), or sentence embeddings with a classical classifier
+- **Vision agent**: a local or hosted VLM + an action executor (pyautogui / Win32 API)
+- **OCR**: Tesseract or PaddleOCR
+- **Vector DB**: Chroma or FAISS
+- **Anomaly detection**: scikit-learn (IsolationForest) first, an autoencoder later
+- **Dashboard**: FastAPI backend + a React/Next.js frontend (or a local Tauri/Electron app to start)
+- **Mobile companion**: React Native, or push through a Telegram bot for a much faster MVP
+- **Storage**: SQLite locally (moving to Postgres if needed)
+- **Vault encryption**: libsodium / AES-GCM
 
 ---
 
-## MVP-этапы
+## MVP phases
 
-### Phase 0 — Фундамент
-- Структура репозитория, общая шина событий, базовая память (SQLite)
-- CI, тесты, codestyle
+### Phase 0 — Foundation
+- Repository layout, a shared event bus, basic memory (SQLite)
+- CI, tests, lint config
 
 ### Phase 1 — Voice Orchestrator MVP
-- Wake word + STT + 10-15 интентов (открыть приложение, найти файл, диктовка)
-- Простой intent-классификатор (без дообучения, baseline на embeddings)
+- Wake word + STT + 10-15 intents (open an app, find a file, dictate text)
+- A baseline intent classifier (no fine-tuning yet, embeddings-based)
 
 ### Phase 2 — Mode Autopilot
-- Детект процессов (IDE/игра), базовые правила смены окружения
-- Интеграция с Google Calendar (встречи → DND)
+- Process detection (IDE/game), basic environment-switching rules
+- Google Calendar integration (meetings → do-not-disturb)
 
 ### Phase 3 — Active Learning Loop
-- UI для исправления распознанных команд
-- Пайплайн переобучения + трекинг метрик точности
+- A UI to correct misrecognized commands
+- The retraining pipeline + accuracy tracking over time
 
 ### Phase 4 — Vision Agent (MVP)
-- Скриншот + VLM на простых задачах (открыть меню, кликнуть кнопку по описанию)
-- Расширение на произвольные действия
+- Screenshot + VLM on simple tasks (open a menu, click a described button)
+- Extending to arbitrary actions
 
 ### Phase 5 — Finance Tracker
-- Смены в календаре → расчёт зарплаты/налогов
-- OCR для расходов + категоризация
-- Цели накоплений + прогноз
+- Calendar shifts → pay/tax calculation
+- OCR for expenses + categorization
+- Savings goals + forecasting
 
 ### Phase 6 — Security Watchdog + Password Vault
-- Baseline "нормального" поведения системы, anomaly detection
-- Vault с шифрованием + проверка утечек
+- A baseline of "normal" system behavior, anomaly detection
+- An encrypted vault with breach checks
 
 ### Phase 7 — Learning Tracker
-- Граф тем, флешкарты, саммаризация материалов универа
+- Topic graph, flashcards, summarization of course material
 
 ### Phase 8 — Memory Graph + Universal Search
-- Переход с плоского vector store на граф знаний
-- Единый поиск по всем источникам
+- Moving from a flat vector store to a knowledge graph
+- One search over every source
 
 ### Phase 9 — Dashboard + Mobile Companion
-- Полноценный UI, пуши на телефон, remote-approve действий
+- A full UI, push notifications, remote action approval
 
 ### Phase 10 — Polish
-- Resume builder, пост-геймовый саммари, code review помощник, health-nudge, аудит подписок
+- Resume builder, post-match summaries, the code-review assistant, health nudges, subscription audit
 
 ---
 
-## Принципы разработки
+## Development principles
 
-- Каждый модуль — отдельный пакет с собственными тестами и минимальным публичным интерфейсом (event in → event out)
-- ML-компоненты должны иметь baseline (без обучения) и улучшенную версию (с дообучением) — это видно в истории коммитов и README каждого модуля
-- Секреты (токены, пароли, ключи) никогда не коммитятся — `.env` в `.gitignore`, пример в `.env.example`
+- Each module is its own package with its own tests and a minimal public interface (event in → event out)
+- ML components ship a baseline (no training) and an improved version (fine-tuned) — visible in the commit history and in each module's README
+- Secrets (tokens, passwords, keys) are never committed — `.env` is gitignored, `.env.example` documents what is needed
