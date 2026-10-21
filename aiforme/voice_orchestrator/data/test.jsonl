@@ -1,0 +1,152 @@
+{"text": "Открой Telegram.", "intent": "open_app", "slots": {"app": "telegram"}}
+{"text": "запусти мне хром пожалуйста", "intent": "open_app", "slots": {"app": "хром"}}
+{"text": "открой ютуб музыку", "intent": "open_app", "slots": {"app": "ютуб музыку"}}
+{"text": "а можешь запустить стим", "intent": "open_app", "slots": {"app": "стим"}}
+{"text": "Открой Visual Studio Code", "intent": "open_app", "slots": {"app": "visual studio code"}}
+{"text": "запусти фотошоп", "intent": "open_app", "slots": {"app": "фотошоп"}}
+{"text": "Open Telegram, please.", "intent": "open_app", "slots": {"app": "telegram"}}
+{"text": "could you launch chrome", "intent": "open_app", "slots": {"app": "chrome"}}
+{"text": "start up photoshop", "intent": "open_app", "slots": {"app": "photoshop"}}
+{"text": "open youtube music", "intent": "open_app", "slots": {"app": "youtube music"}}
+{"text": "bring up discord", "intent": "open_app", "slots": {"app": "discord"}}
+{"text": "please open steam", "intent": "open_app", "slots": {"app": "steam"}}
+{"text": "Закрой Chrome", "intent": "close_app", "slots": {"app": "chrome"}}
+{"text": "выруби дискорд", "intent": "close_app", "slots": {"app": "дискорд"}}
+{"text": "закрой пожалуйста телегу", "intent": "close_app", "slots": {"app": "телегу"}}
+{"text": "закрой фотошоп", "intent": "close_app", "slots": {"app": "фотошоп"}}
+{"text": "заверши стим", "intent": "close_app", "slots": {"app": "стим"}}
+{"text": "Close Google Chrome.", "intent": "close_app", "slots": {"app": "google chrome"}}
+{"text": "kill discord", "intent": "close_app", "slots": {"app": "discord"}}
+{"text": "quit photoshop please", "intent": "close_app", "slots": {"app": "photoshop"}}
+{"text": "close down telegram", "intent": "close_app", "slots": {"app": "telegram"}}
+{"text": "exit steam", "intent": "close_app", "slots": {"app": "steam"}}
+{"text": "please close spotify", "intent": "close_app", "slots": {"app": "spotify"}}
+{"text": "найди файл с отчетом за март", "intent": "find_file", "slots": {"query": "отчетом за март"}}
+{"text": "где у меня лежит резюме", "intent": "find_file", "slots": {"query": "резюме"}}
+{"text": "поищи на диске фото паспорта", "intent": "find_file", "slots": {"query": "фото паспорта"}}
+{"text": "найди мою курсовую", "intent": "find_file", "slots": {"query": "курсовую"}}
+{"text": "Где презентация?", "intent": "find_file", "slots": {"query": "презентация"}}
+{"text": "найди папку загрузки", "intent": "find_file", "slots": {"query": "загрузки"}}
+{"text": "find the march report", "intent": "find_file", "slots": {"query": "march report"}}
+{"text": "where is my resume", "intent": "find_file", "slots": {"query": "resume"}}
+{"text": "search for the passport photo", "intent": "find_file", "slots": {"query": "passport photo"}}
+{"text": "find my coursework", "intent": "find_file", "slots": {"query": "coursework"}}
+{"text": "Where's the presentation?", "intent": "find_file", "slots": {"query": "presentation"}}
+{"text": "locate the downloads folder", "intent": "find_file", "slots": {"query": "downloads"}}
+{"text": "напиши: буду дома в восемь", "intent": "dictate", "slots": {"text": "буду дома в восемь"}}
+{"text": "напечатай с днем рождения", "intent": "dictate", "slots": {"text": "с днем рождения"}}
+{"text": "набери текст спасибо за помощь", "intent": "dictate", "slots": {"text": "спасибо за помощь"}}
+{"text": "Напиши: окей, увидимся.", "intent": "dictate", "slots": {"text": "окей увидимся"}}
+{"text": "введи привет это я", "intent": "dictate", "slots": {"text": "привет это я"}}
+{"text": "type: I'll be home at eight", "intent": "dictate", "slots": {"text": "i'll be home at eight"}}
+{"text": "write happy birthday", "intent": "dictate", "slots": {"text": "happy birthday"}}
+{"text": "type in thanks for the help", "intent": "dictate", "slots": {"text": "thanks for the help"}}
+{"text": "Write: okay, see you.", "intent": "dictate", "slots": {"text": "okay see you"}}
+{"text": "dictate the following see you tomorrow", "intent": "dictate", "slots": {"text": "see you tomorrow"}}
+{"text": "Загугли, как сварить кофе.", "intent": "web_search", "slots": {"query": "как сварить кофе"}}
+{"text": "найди в интернете отзывы о ноутбуке", "intent": "web_search", "slots": {"query": "отзывы о ноутбуке"}}
+{"text": "что такое градиентный спуск", "intent": "web_search", "slots": {"query": "градиентный спуск"}}
+{"text": "поищи в сети билеты в париж", "intent": "web_search", "slots": {"query": "билеты в париж"}}
+{"text": "погугли пожалуйста курс евро", "intent": "web_search", "slots": {"query": "курс евро"}}
+{"text": "кто такой алан тьюринг", "intent": "web_search", "slots": {"query": "алан тьюринг"}}
+{"text": "Google how to brew coffee.", "intent": "web_search", "slots": {"query": "how to brew coffee"}}
+{"text": "search the internet for laptop reviews", "intent": "web_search", "slots": {"query": "laptop reviews"}}
+{"text": "what is gradient descent", "intent": "web_search", "slots": {"query": "gradient descent"}}
+{"text": "look up flights to paris", "intent": "web_search", "slots": {"query": "flights to paris"}}
+{"text": "who is alan turing", "intent": "web_search", "slots": {"query": "alan turing"}}
+{"text": "Ещё громче!", "intent": "volume_up"}
+{"text": "сделай погромче", "intent": "volume_up"}
+{"text": "прибавь громкость", "intent": "volume_up"}
+{"text": "звук выше", "intent": "volume_up"}
+{"text": "Louder please", "intent": "volume_up"}
+{"text": "pump up the volume", "intent": "volume_up"}
+{"text": "can you make it louder", "intent": "volume_up"}
+{"text": "volume higher", "intent": "volume_up"}
+{"text": "потише", "intent": "volume_down"}
+{"text": "убавь громкость пожалуйста", "intent": "volume_down"}
+{"text": "сделай звук тише", "intent": "volume_down"}
+{"text": "слишком громко", "intent": "volume_down"}
+{"text": "quieter please", "intent": "volume_down"}
+{"text": "turn the volume down", "intent": "volume_down"}
+{"text": "it's too loud", "intent": "volume_down"}
+{"text": "lower it a bit", "intent": "volume_down"}
+{"text": "выруби звук", "intent": "mute"}
+{"text": "убери звук", "intent": "mute"}
+{"text": "сделай без звука", "intent": "mute"}
+{"text": "верни звук", "intent": "mute"}
+{"text": "mute it", "intent": "mute"}
+{"text": "turn the sound off", "intent": "mute"}
+{"text": "kill the sound", "intent": "mute"}
+{"text": "unmute please", "intent": "mute"}
+{"text": "Поставь видео на паузу.", "intent": "media_play_pause"}
+{"text": "поставь музыку на паузу", "intent": "media_play_pause"}
+{"text": "продолжи", "intent": "media_play_pause"}
+{"text": "запусти музыку снова", "intent": "media_play_pause"}
+{"text": "Pause it.", "intent": "media_play_pause"}
+{"text": "pause the song", "intent": "media_play_pause"}
+{"text": "resume", "intent": "media_play_pause"}
+{"text": "continue playing", "intent": "media_play_pause"}
+{"text": "следующий", "intent": "media_next"}
+{"text": "переключи трек", "intent": "media_next"}
+{"text": "давай следующую песню", "intent": "media_next"}
+{"text": "скипни", "intent": "media_next"}
+{"text": "next", "intent": "media_next"}
+{"text": "skip this track", "intent": "media_next"}
+{"text": "next one please", "intent": "media_next"}
+{"text": "go to the next song", "intent": "media_next"}
+{"text": "Сделай скрин.", "intent": "screenshot"}
+{"text": "сфотографируй экран", "intent": "screenshot"}
+{"text": "скриншот пожалуйста", "intent": "screenshot"}
+{"text": "сохрани снимок экрана", "intent": "screenshot"}
+{"text": "Grab a screenshot.", "intent": "screenshot"}
+{"text": "screenshot please", "intent": "screenshot"}
+{"text": "snap the screen", "intent": "screenshot"}
+{"text": "capture my screen", "intent": "screenshot"}
+{"text": "заблокируй комп", "intent": "lock_screen"}
+{"text": "блокируй экран", "intent": "lock_screen"}
+{"text": "я ухожу, заблокируй компьютер", "intent": "lock_screen"}
+{"text": "поставь блокировку", "intent": "lock_screen"}
+{"text": "lock the pc", "intent": "lock_screen"}
+{"text": "lock my computer please", "intent": "lock_screen"}
+{"text": "I'm leaving, lock it", "intent": "lock_screen"}
+{"text": "lock the screen now", "intent": "lock_screen"}
+{"text": "А сколько уже времени?", "intent": "tell_time"}
+{"text": "Скажи, который час.", "intent": "tell_time"}
+{"text": "подскажи время", "intent": "tell_time"}
+{"text": "сколько на часах", "intent": "tell_time"}
+{"text": "What time is it right now?", "intent": "tell_time"}
+{"text": "what's the time now", "intent": "tell_time"}
+{"text": "tell me the current time", "intent": "tell_time"}
+{"text": "got the time", "intent": "tell_time"}
+{"text": "Отмени.", "intent": "cancel"}
+{"text": "ой, ничего", "intent": "cancel"}
+{"text": "забей", "intent": "cancel"}
+{"text": "неважно", "intent": "cancel"}
+{"text": "Cancel that.", "intent": "cancel"}
+{"text": "Nah, never mind.", "intent": "cancel"}
+{"text": "forget about it", "intent": "cancel"}
+{"text": "oops nothing", "intent": "cancel"}
+{"text": "закажи такси до дома", "intent": "out_of_scope"}
+{"text": "поставь таймер на пять минут", "intent": "out_of_scope"}
+{"text": "спой песню", "intent": "out_of_scope"}
+{"text": "кто ты", "intent": "out_of_scope"}
+{"text": "выключи компьютер через час", "intent": "out_of_scope"}
+{"text": "перезагрузи систему", "intent": "out_of_scope"}
+{"text": "напомни позвонить в банк", "intent": "out_of_scope"}
+{"text": "включи кондиционер", "intent": "out_of_scope"}
+{"text": "как дела", "intent": "out_of_scope"}
+{"text": "что ты умеешь", "intent": "out_of_scope"}
+{"text": "открой окно в комнате", "intent": "out_of_scope"}
+{"text": "давай поговорим", "intent": "out_of_scope"}
+{"text": "book a taxi home", "intent": "out_of_scope"}
+{"text": "set a timer for five minutes", "intent": "out_of_scope"}
+{"text": "sing a song", "intent": "out_of_scope"}
+{"text": "who are you", "intent": "out_of_scope"}
+{"text": "shut down the computer in an hour", "intent": "out_of_scope"}
+{"text": "reboot the system", "intent": "out_of_scope"}
+{"text": "remind me to call the bank", "intent": "out_of_scope"}
+{"text": "turn on the air conditioner", "intent": "out_of_scope"}
+{"text": "how are you", "intent": "out_of_scope"}
+{"text": "what can you do", "intent": "out_of_scope"}
+{"text": "open the window in my room", "intent": "out_of_scope"}
+{"text": "let's chat", "intent": "out_of_scope"}

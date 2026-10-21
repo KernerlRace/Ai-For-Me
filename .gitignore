@@ -19,12 +19,15 @@ build/
 vault/
 
 # Data & models
-data/
+# recordings and local state; package data such as aiforme/*/data/ stays tracked
+/data/
 *.db
 *.sqlite3
 models/*.bin
 models/*.pt
 models/*.onnx
+# trained on my own voice
+models/wakeword.json
 
 # OS
 .DS_Store

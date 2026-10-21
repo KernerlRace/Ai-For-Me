@@ -1,0 +1,255 @@
+{"text": "открой телеграм", "intent": "open_app", "slots": {"app": "телеграм"}}
+{"text": "открой хром", "intent": "open_app", "slots": {"app": "хром"}}
+{"text": "запусти стим", "intent": "open_app", "slots": {"app": "стим"}}
+{"text": "запусти дискорд", "intent": "open_app", "slots": {"app": "дискорд"}}
+{"text": "открой мне спотифай", "intent": "open_app", "slots": {"app": "спотифай"}}
+{"text": "открой пожалуйста блокнот", "intent": "open_app", "slots": {"app": "блокнот"}}
+{"text": "можешь открыть калькулятор", "intent": "open_app", "slots": {"app": "калькулятор"}}
+{"text": "включи вс код", "intent": "open_app", "slots": {"app": "вс код"}}
+{"text": "запусти пожалуйста обс", "intent": "open_app", "slots": {"app": "обс"}}
+{"text": "открой проводник", "intent": "open_app", "slots": {"app": "проводник"}}
+{"text": "мне нужен ворд", "intent": "open_app", "slots": {"app": "ворд"}}
+{"text": "открой браузер", "intent": "open_app", "slots": {"app": "браузер"}}
+{"text": "запусти игру дота", "intent": "open_app", "slots": {"app": "дота"}}
+{"text": "открой настройки", "intent": "open_app", "slots": {"app": "настройки"}}
+{"text": "открой steam", "intent": "open_app", "slots": {"app": "steam"}}
+{"text": "запусти chrome", "intent": "open_app", "slots": {"app": "chrome"}}
+{"text": "open telegram", "intent": "open_app", "slots": {"app": "telegram"}}
+{"text": "open chrome", "intent": "open_app", "slots": {"app": "chrome"}}
+{"text": "launch steam", "intent": "open_app", "slots": {"app": "steam"}}
+{"text": "start discord", "intent": "open_app", "slots": {"app": "discord"}}
+{"text": "open spotify please", "intent": "open_app", "slots": {"app": "spotify"}}
+{"text": "can you open the calculator", "intent": "open_app", "slots": {"app": "calculator"}}
+{"text": "run vs code", "intent": "open_app", "slots": {"app": "vs code"}}
+{"text": "open notepad", "intent": "open_app", "slots": {"app": "notepad"}}
+{"text": "fire up obs", "intent": "open_app", "slots": {"app": "obs"}}
+{"text": "open file explorer", "intent": "open_app", "slots": {"app": "file explorer"}}
+{"text": "open word", "intent": "open_app", "slots": {"app": "word"}}
+{"text": "start the browser", "intent": "open_app", "slots": {"app": "browser"}}
+{"text": "launch dota", "intent": "open_app", "slots": {"app": "dota"}}
+{"text": "open settings", "intent": "open_app", "slots": {"app": "settings"}}
+{"text": "закрой телеграм", "intent": "close_app", "slots": {"app": "телеграм"}}
+{"text": "закрой хром", "intent": "close_app", "slots": {"app": "хром"}}
+{"text": "выключи стим", "intent": "close_app", "slots": {"app": "стим"}}
+{"text": "закрой дискорд", "intent": "close_app", "slots": {"app": "дискорд"}}
+{"text": "закрой пожалуйста спотифай", "intent": "close_app", "slots": {"app": "спотифай"}}
+{"text": "закрой блокнот", "intent": "close_app", "slots": {"app": "блокнот"}}
+{"text": "выйди из дискорда", "intent": "close_app", "slots": {"app": "дискорда"}}
+{"text": "убей процесс хром", "intent": "close_app", "slots": {"app": "хром"}}
+{"text": "закрой вс код", "intent": "close_app", "slots": {"app": "вс код"}}
+{"text": "останови обс", "intent": "close_app", "slots": {"app": "обс"}}
+{"text": "закрой калькулятор", "intent": "close_app", "slots": {"app": "калькулятор"}}
+{"text": "закрой браузер", "intent": "close_app", "slots": {"app": "браузер"}}
+{"text": "закрой steam", "intent": "close_app", "slots": {"app": "steam"}}
+{"text": "close telegram", "intent": "close_app", "slots": {"app": "telegram"}}
+{"text": "close chrome", "intent": "close_app", "slots": {"app": "chrome"}}
+{"text": "quit steam", "intent": "close_app", "slots": {"app": "steam"}}
+{"text": "exit discord", "intent": "close_app", "slots": {"app": "discord"}}
+{"text": "close spotify please", "intent": "close_app", "slots": {"app": "spotify"}}
+{"text": "kill notepad", "intent": "close_app", "slots": {"app": "notepad"}}
+{"text": "close vs code", "intent": "close_app", "slots": {"app": "vs code"}}
+{"text": "stop obs", "intent": "close_app", "slots": {"app": "obs"}}
+{"text": "close the calculator", "intent": "close_app", "slots": {"app": "calculator"}}
+{"text": "close the browser", "intent": "close_app", "slots": {"app": "browser"}}
+{"text": "quit word", "intent": "close_app", "slots": {"app": "word"}}
+{"text": "close settings", "intent": "close_app", "slots": {"app": "settings"}}
+{"text": "найди файл отчет", "intent": "find_file", "slots": {"query": "отчет"}}
+{"text": "найди файл резюме", "intent": "find_file", "slots": {"query": "резюме"}}
+{"text": "где лежит презентация по истории", "intent": "find_file", "slots": {"query": "презентация по истории"}}
+{"text": "найди документ курсовая", "intent": "find_file", "slots": {"query": "курсовая"}}
+{"text": "найди папку проекты", "intent": "find_file", "slots": {"query": "проекты"}}
+{"text": "поищи файл бюджет", "intent": "find_file", "slots": {"query": "бюджет"}}
+{"text": "найди на компьютере фотки с моря", "intent": "find_file", "slots": {"query": "фотки с моря"}}
+{"text": "где мой файл договор", "intent": "find_file", "slots": {"query": "договор"}}
+{"text": "найди скриншот ошибки", "intent": "find_file", "slots": {"query": "скриншот ошибки"}}
+{"text": "открой файл диплом", "intent": "find_file", "slots": {"query": "диплом"}}
+{"text": "найди pdf с билетами", "intent": "find_file", "slots": {"query": "pdf с билетами"}}
+{"text": "find the file report", "intent": "find_file", "slots": {"query": "report"}}
+{"text": "find my resume", "intent": "find_file", "slots": {"query": "resume"}}
+{"text": "where is the history presentation", "intent": "find_file", "slots": {"query": "history presentation"}}
+{"text": "search my computer for budget", "intent": "find_file", "slots": {"query": "budget"}}
+{"text": "find the folder projects", "intent": "find_file", "slots": {"query": "projects"}}
+{"text": "locate the contract file", "intent": "find_file", "slots": {"query": "contract"}}
+{"text": "find photos from the beach", "intent": "find_file", "slots": {"query": "photos from the beach"}}
+{"text": "open the file thesis", "intent": "find_file", "slots": {"query": "thesis"}}
+{"text": "find the screenshot of the error", "intent": "find_file", "slots": {"query": "screenshot of the error"}}
+{"text": "where did i save the invoice", "intent": "find_file", "slots": {"query": "invoice"}}
+{"text": "find the pdf with tickets", "intent": "find_file", "slots": {"query": "pdf with tickets"}}
+{"text": "напиши привет как дела", "intent": "dictate", "slots": {"text": "привет как дела"}}
+{"text": "напечатай я буду через десять минут", "intent": "dictate", "slots": {"text": "я буду через десять минут"}}
+{"text": "введи текст встречаемся у входа", "intent": "dictate", "slots": {"text": "встречаемся у входа"}}
+{"text": "напиши спасибо большое", "intent": "dictate", "slots": {"text": "спасибо большое"}}
+{"text": "набери ок договорились", "intent": "dictate", "slots": {"text": "ок договорились"}}
+{"text": "напиши сообщение скоро буду", "intent": "dictate", "slots": {"text": "скоро буду"}}
+{"text": "напечатай текст созвонимся вечером", "intent": "dictate", "slots": {"text": "созвонимся вечером"}}
+{"text": "запиши под диктовку купить хлеб и молоко", "intent": "dictate", "slots": {"text": "купить хлеб и молоко"}}
+{"text": "напиши пожалуйста доброе утро", "intent": "dictate", "slots": {"text": "доброе утро"}}
+{"text": "type hello how are you", "intent": "dictate", "slots": {"text": "hello how are you"}}
+{"text": "write i'll be there in ten minutes", "intent": "dictate", "slots": {"text": "i'll be there in ten minutes"}}
+{"text": "type the text see you at the entrance", "intent": "dictate", "slots": {"text": "see you at the entrance"}}
+{"text": "dictate thanks a lot", "intent": "dictate", "slots": {"text": "thanks a lot"}}
+{"text": "write ok sounds good", "intent": "dictate", "slots": {"text": "ok sounds good"}}
+{"text": "type message running late", "intent": "dictate", "slots": {"text": "running late"}}
+{"text": "enter the text meeting at noon", "intent": "dictate", "slots": {"text": "meeting at noon"}}
+{"text": "take dictation buy bread and milk", "intent": "dictate", "slots": {"text": "buy bread and milk"}}
+{"text": "please type good morning", "intent": "dictate", "slots": {"text": "good morning"}}
+{"text": "загугли погода в лондоне", "intent": "web_search", "slots": {"query": "погода в лондоне"}}
+{"text": "найди в интернете рецепт борща", "intent": "web_search", "slots": {"query": "рецепт борща"}}
+{"text": "поищи в гугле как установить питон", "intent": "web_search", "slots": {"query": "как установить питон"}}
+{"text": "погугли курс доллара", "intent": "web_search", "slots": {"query": "курс доллара"}}
+{"text": "найди в браузере расписание поездов", "intent": "web_search", "slots": {"query": "расписание поездов"}}
+{"text": "что такое трансформер в машинном обучении", "intent": "web_search", "slots": {"query": "трансформер в машинном обучении"}}
+{"text": "поиск в интернете новости", "intent": "web_search", "slots": {"query": "новости"}}
+{"text": "загугли в каком году основан рим", "intent": "web_search", "slots": {"query": "в каком году основан рим"}}
+{"text": "google weather in london", "intent": "web_search", "slots": {"query": "weather in london"}}
+{"text": "search the web for borscht recipe", "intent": "web_search", "slots": {"query": "borscht recipe"}}
+{"text": "look up how to install python", "intent": "web_search", "slots": {"query": "how to install python"}}
+{"text": "search google for dollar exchange rate", "intent": "web_search", "slots": {"query": "dollar exchange rate"}}
+{"text": "what is a transformer in machine learning", "intent": "web_search", "slots": {"query": "transformer in machine learning"}}
+{"text": "search online for train timetable", "intent": "web_search", "slots": {"query": "train timetable"}}
+{"text": "look up latest news", "intent": "web_search", "slots": {"query": "latest news"}}
+{"text": "google in which year rome was founded", "intent": "web_search", "slots": {"query": "in which year rome was founded"}}
+{"text": "сделай громче", "intent": "volume_up"}
+{"text": "прибавь звук", "intent": "volume_up"}
+{"text": "громче", "intent": "volume_up"}
+{"text": "увеличь громкость", "intent": "volume_up"}
+{"text": "звук погромче", "intent": "volume_up"}
+{"text": "подними громкость", "intent": "volume_up"}
+{"text": "погромче пожалуйста", "intent": "volume_up"}
+{"text": "volume up", "intent": "volume_up"}
+{"text": "louder", "intent": "volume_up"}
+{"text": "turn it up", "intent": "volume_up"}
+{"text": "increase the volume", "intent": "volume_up"}
+{"text": "make it louder", "intent": "volume_up"}
+{"text": "raise the volume", "intent": "volume_up"}
+{"text": "turn the sound up", "intent": "volume_up"}
+{"text": "сделай тише", "intent": "volume_down"}
+{"text": "убавь звук", "intent": "volume_down"}
+{"text": "тише", "intent": "volume_down"}
+{"text": "уменьши громкость", "intent": "volume_down"}
+{"text": "потише пожалуйста", "intent": "volume_down"}
+{"text": "понизь громкость", "intent": "volume_down"}
+{"text": "звук потише", "intent": "volume_down"}
+{"text": "volume down", "intent": "volume_down"}
+{"text": "quieter", "intent": "volume_down"}
+{"text": "turn it down", "intent": "volume_down"}
+{"text": "lower the volume", "intent": "volume_down"}
+{"text": "decrease the volume", "intent": "volume_down"}
+{"text": "make it quieter", "intent": "volume_down"}
+{"text": "turn the sound down", "intent": "volume_down"}
+{"text": "выключи звук", "intent": "mute"}
+{"text": "без звука", "intent": "mute"}
+{"text": "замьють", "intent": "mute"}
+{"text": "отключи звук", "intent": "mute"}
+{"text": "тишина", "intent": "mute"}
+{"text": "включи звук обратно", "intent": "mute"}
+{"text": "mute", "intent": "mute"}
+{"text": "mute the sound", "intent": "mute"}
+{"text": "unmute", "intent": "mute"}
+{"text": "turn off the sound", "intent": "mute"}
+{"text": "silence", "intent": "mute"}
+{"text": "sound off", "intent": "mute"}
+{"text": "пауза", "intent": "media_play_pause"}
+{"text": "поставь на паузу", "intent": "media_play_pause"}
+{"text": "продолжи воспроизведение", "intent": "media_play_pause"}
+{"text": "включи музыку", "intent": "media_play_pause"}
+{"text": "останови музыку", "intent": "media_play_pause"}
+{"text": "сними с паузы", "intent": "media_play_pause"}
+{"text": "pause", "intent": "media_play_pause"}
+{"text": "pause the music", "intent": "media_play_pause"}
+{"text": "play", "intent": "media_play_pause"}
+{"text": "resume playback", "intent": "media_play_pause"}
+{"text": "play music", "intent": "media_play_pause"}
+{"text": "stop the music", "intent": "media_play_pause"}
+{"text": "unpause", "intent": "media_play_pause"}
+{"text": "следующий трек", "intent": "media_next"}
+{"text": "дальше", "intent": "media_next"}
+{"text": "переключи песню", "intent": "media_next"}
+{"text": "следующая песня", "intent": "media_next"}
+{"text": "пропусти трек", "intent": "media_next"}
+{"text": "некст", "intent": "media_next"}
+{"text": "next track", "intent": "media_next"}
+{"text": "skip", "intent": "media_next"}
+{"text": "next song", "intent": "media_next"}
+{"text": "skip this song", "intent": "media_next"}
+{"text": "play the next one", "intent": "media_next"}
+{"text": "skip track", "intent": "media_next"}
+{"text": "сделай скриншот", "intent": "screenshot"}
+{"text": "скрин экрана", "intent": "screenshot"}
+{"text": "сфоткай экран", "intent": "screenshot"}
+{"text": "снимок экрана", "intent": "screenshot"}
+{"text": "заскринь", "intent": "screenshot"}
+{"text": "сохрани скриншот", "intent": "screenshot"}
+{"text": "take a screenshot", "intent": "screenshot"}
+{"text": "screenshot", "intent": "screenshot"}
+{"text": "capture the screen", "intent": "screenshot"}
+{"text": "grab the screen", "intent": "screenshot"}
+{"text": "screen capture", "intent": "screenshot"}
+{"text": "save a screenshot", "intent": "screenshot"}
+{"text": "заблокируй компьютер", "intent": "lock_screen"}
+{"text": "заблокируй экран", "intent": "lock_screen"}
+{"text": "блокировка", "intent": "lock_screen"}
+{"text": "я отошел заблокируй", "intent": "lock_screen"}
+{"text": "заблокируй пк", "intent": "lock_screen"}
+{"text": "lock the computer", "intent": "lock_screen"}
+{"text": "lock screen", "intent": "lock_screen"}
+{"text": "lock my pc", "intent": "lock_screen"}
+{"text": "lock it", "intent": "lock_screen"}
+{"text": "i'm stepping away lock the screen", "intent": "lock_screen"}
+{"text": "lock windows", "intent": "lock_screen"}
+{"text": "который час", "intent": "tell_time"}
+{"text": "сколько времени", "intent": "tell_time"}
+{"text": "скажи время", "intent": "tell_time"}
+{"text": "сколько сейчас времени", "intent": "tell_time"}
+{"text": "какое сейчас время", "intent": "tell_time"}
+{"text": "который сейчас час", "intent": "tell_time"}
+{"text": "what time is it", "intent": "tell_time"}
+{"text": "what's the time", "intent": "tell_time"}
+{"text": "tell me the time", "intent": "tell_time"}
+{"text": "current time", "intent": "tell_time"}
+{"text": "time please", "intent": "tell_time"}
+{"text": "do you know what time it is", "intent": "tell_time"}
+{"text": "отмена", "intent": "cancel"}
+{"text": "ничего", "intent": "cancel"}
+{"text": "отбой", "intent": "cancel"}
+{"text": "забудь", "intent": "cancel"}
+{"text": "не надо", "intent": "cancel"}
+{"text": "стоп отмена", "intent": "cancel"}
+{"text": "я передумал", "intent": "cancel"}
+{"text": "cancel", "intent": "cancel"}
+{"text": "never mind", "intent": "cancel"}
+{"text": "nothing", "intent": "cancel"}
+{"text": "forget it", "intent": "cancel"}
+{"text": "stop", "intent": "cancel"}
+{"text": "no thanks", "intent": "cancel"}
+{"text": "i changed my mind", "intent": "cancel"}
+{"text": "закажи пиццу", "intent": "out_of_scope"}
+{"text": "поставь будильник на семь", "intent": "out_of_scope"}
+{"text": "расскажи анекдот", "intent": "out_of_scope"}
+{"text": "как тебя зовут", "intent": "out_of_scope"}
+{"text": "выключи компьютер", "intent": "out_of_scope"}
+{"text": "перезагрузи компьютер", "intent": "out_of_scope"}
+{"text": "позвони маме", "intent": "out_of_scope"}
+{"text": "отправь письмо начальнику", "intent": "out_of_scope"}
+{"text": "включи свет в комнате", "intent": "out_of_scope"}
+{"text": "привет", "intent": "out_of_scope"}
+{"text": "спасибо", "intent": "out_of_scope"}
+{"text": "ты меня слышишь", "intent": "out_of_scope"}
+{"text": "напомни купить молоко", "intent": "out_of_scope"}
+{"text": "переведи слово кошка", "intent": "out_of_scope"}
+{"text": "мне скучно", "intent": "out_of_scope"}
+{"text": "order a pizza", "intent": "out_of_scope"}
+{"text": "set an alarm for seven", "intent": "out_of_scope"}
+{"text": "tell me a joke", "intent": "out_of_scope"}
+{"text": "what's your name", "intent": "out_of_scope"}
+{"text": "shut down the computer", "intent": "out_of_scope"}
+{"text": "restart the pc", "intent": "out_of_scope"}
+{"text": "call mom", "intent": "out_of_scope"}
+{"text": "send an email to my boss", "intent": "out_of_scope"}
+{"text": "turn on the lights", "intent": "out_of_scope"}
+{"text": "hello", "intent": "out_of_scope"}
+{"text": "thank you", "intent": "out_of_scope"}
+{"text": "can you hear me", "intent": "out_of_scope"}
+{"text": "remind me to buy milk", "intent": "out_of_scope"}
+{"text": "translate cat to spanish", "intent": "out_of_scope"}
+{"text": "i'm bored", "intent": "out_of_scope"}
