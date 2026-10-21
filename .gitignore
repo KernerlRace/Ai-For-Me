@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+vault/
+
+# Data & models
+data/
+*.db
+*.sqlite3
+models/*.bin
+models/*.pt
+models/*.onnx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
