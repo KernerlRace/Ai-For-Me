@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0     # setup-uv publishes no major-version tags
         with:
           python-version: ${{ matrix.python }}
       - name: Lint
