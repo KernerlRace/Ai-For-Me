@@ -1,4 +1,4 @@
-# ROADMAP
+# Roadmap
 
 ## Vision
 
@@ -91,28 +91,14 @@ As a portfolio project, the goal is to show a full ML lifecycle — data, traini
 
 ## Architecture (high level)
 
-```
-                     ┌───────────────┐
-                     │   Dashboard   │  (UI, action log)
-                     └───────┬───────┘
-                             │
-                     ┌───────┴───────┐
-                     │  Event Bus /  │
-                     │  Orchestrator │
-                     └───┬───┬───┬───┘
-        ┌────────────────┘   │   └────────────────┐
-┌───────┴───────┐   ┌────────┴────────┐   ┌────────┴────────┐
-│ Voice/Intent   │   │  Mode Autopilot  │   │  Vision Agent   │
-│ (STT + NLU)    │   │ (processes+cal)  │   │ (screenshot+VLM)│
-└───────┬────────┘   └────────┬────────┘   └────────┬────────┘
-        │                     │                      │
-        └──────────┬──────────┴──────────┬───────────┘
-                    │                     │
-            ┌───────┴───────┐     ┌───────┴───────┐
-            │ Memory/Graph  │     │ Finance/Security│
-            │  + Universal  │     │  + Learning     │
-            │    Search     │     │    Tracker      │
-            └───────────────┘     └────────────────┘
+```mermaid
+flowchart TD
+    D[Dashboard<br>UI, action log] --- B[Event bus / orchestrator]
+    B --- V[Voice / intent<br>STT + NLU]
+    B --- M[Mode autopilot<br>processes + calendar]
+    B --- A[Vision agent<br>screenshot + VLM]
+    V & M & A --- G[Memory graph<br>+ universal search]
+    V & M & A --- F[Finance / security<br>+ learning tracker]
 ```
 
 Each module is its own process/package, talking over a local event bus (Redis pub/sub, or just SQLite with polling to start, migrating to a proper queue later).

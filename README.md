@@ -1,12 +1,16 @@
 # AI For Me
 
+![Status: planning](https://img.shields.io/badge/status-planning-lightgrey)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-Status: planning stage. The architecture, the ML approach for each module and the phased build order are written up in [ROADMAP.md](ROADMAP.md); implementation starts with the voice orchestrator (Phase 1).
+> **Status:** planning stage — no code yet. The architecture, the ML approach for each module and the phased build order
+> are written up in [ROADMAP.md](ROADMAP.md); implementation starts with the voice orchestrator (Phase 1).
 
 ## Why
 
-Most "AI assistant" side projects are a thin wrapper around a single LLM call. This one is a set of independent ML subsystems wired together by a shared event bus and a common memory — intent classification with an active-learning feedback loop, a vision-language agent that acts from screenshots, OCR and categorization for expense tracking, anomaly detection for system security, a knowledge graph for long-term memory — each with its own baseline, its own evaluation, and a reason to exist on its own.
+The goal is a full ML lifecycle — data, training, evaluation, deployment and a feedback loop — rather than a wrapper around a single LLM call. The assistant is planned as a set of independent ML subsystems wired together by a shared event bus and a common memory — intent classification with an active-learning feedback loop, a vision-language agent that acts from screenshots, OCR and categorization for expense tracking, anomaly detection for system security, a knowledge graph for long-term memory — each with its own baseline, its own evaluation, and a reason to exist on its own.
 
 ## Planned modules
 
@@ -40,4 +44,17 @@ Python · faster-whisper · HuggingFace Transformers · a vision-language model 
 
 ## Roadmap
 
-Ten phases, from a voice-command MVP through the vision agent, finance tracking and the security watchdog to a knowledge-graph memory, a dashboard and a mobile companion. Full detail, including the ML approach for every module, is in [ROADMAP.md](ROADMAP.md).
+- [x] Vision, module list, architecture and build order
+- [ ] Phase 0 — repository layout, shared event bus, basic memory, CI and tests
+- [ ] Phase 1 — voice orchestrator MVP: wake word, STT, 10–15 intents, embeddings baseline
+- [ ] Phase 2 — mode autopilot: process detection, calendar integration
+- [ ] Phase 3 — active learning loop: corrections UI, retraining, accuracy over time
+- [ ] Phase 4 — vision agent: screenshot + VLM on simple tasks, then arbitrary actions
+- [ ] Phase 5 — finance tracker: shifts → pay and tax, receipt OCR and categorization, savings goals
+- [ ] Phase 6 — security watchdog and password vault
+- [ ] Phase 7 — learning tracker: topic graph, flashcards, summaries
+- [ ] Phase 8 — memory graph and universal search
+- [ ] Phase 9 — dashboard and mobile companion
+- [ ] Phase 10 — resume builder and smaller features
+
+Full detail, including the ML approach for every module, is in [ROADMAP.md](ROADMAP.md).
