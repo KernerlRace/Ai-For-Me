@@ -1,7 +1,7 @@
 """Log-mel features in NumPy, shared by training and the live detector, so the assistant needs no PyTorch.
 
 25 ms Hann windows every 10 ms, 40 mel bands up to 8 kHz, log of the power with a floor. A detector window
-of 1.2 s is 121 frames; the model sees a 40 × 121 image.
+of 1.5 s is 148 frames; the model sees a 40 × 148 image.
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ N_FFT = 512
 WIN = 400               # 25 ms
 HOP = 160               # 10 ms
 N_MELS = 40
-WINDOW_S = 1.2
+WINDOW_S = 1.5         # «Амадеус» said slowly takes up to 1.4 s
 WINDOW = int(WINDOW_S * SAMPLE_RATE)
 FRAMES = 1 + (WINDOW - WIN) // HOP
 

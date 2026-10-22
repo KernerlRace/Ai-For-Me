@@ -1,6 +1,6 @@
 # Voice Orchestrator
 
-Phase 1 of [AI For Me](../../README.md): say «Джарвис» and a command in Russian or English, and the machine does
+Phase 1 of [AI For Me](../../README.md): say «Амадеус» and a command in Russian or English, and the machine does
 it — opens or closes an app, finds a file, types dictated text, searches the web, changes the volume, controls
 media, takes a screenshot, locks the screen or tells the time.
 
@@ -86,7 +86,7 @@ errors alone, not of a real room; recordings of real speech are next.
 
 ```bash
 uv sync --all-extras
-uv run python -m aiforme run                  # «Джарвис», then a command
+uv run python -m aiforme run                  # «Амадеус», then a command
 uv run python -m aiforme run --push-to-talk   # Enter instead of the wake word
 uv run python -m aiforme run --no-voice       # no microphone; then, in another terminal:
 uv run python -m aiforme say "сколько времени"
