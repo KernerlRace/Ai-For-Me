@@ -15,5 +15,16 @@
   "ambient_minutes": 2.0,
   "false_accepts_per_hour": 0.0
  },
- "test": null
+ "test": {
+  "recall": 0.84,
+  "positives": 50,
+  "false_accepts": 2,
+  "ambient_minutes": 10.0,
+  "false_accepts_per_hour": 12.0,
+  "misses": "all 8 in the whispered takes (11-19); max probability 0.58-0.96 under the 0.977 threshold",
+  "false_accept_audio": [
+   "speech: 'А? Не знаю. Это те, которые...'",
+   "a cough"
+  ]
+ }
 }

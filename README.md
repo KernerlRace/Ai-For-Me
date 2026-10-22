@@ -8,7 +8,7 @@ A personal AI layer for my own machine: a voice-controlled orchestrator that als
 
 > **Status:** Phase 1 in progress — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
 > Whisper on the GPU, intent recognition in Russian and English (92.8% on held-out phrases, 90.1% through speech) and
-> 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings (29 of 30 held-out takes). Phase 0 — the event
+> 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings (84% of wake words in a separate test session, 12 false accepts an hour — next to fix). Phase 0 — the event
 > bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
 > phased build order are written up in [ROADMAP.md](ROADMAP.md).
 

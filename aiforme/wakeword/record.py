@@ -4,6 +4,7 @@
     python -m aiforme.wakeword.record negative --n 100            # other phrases, including similar words
     python -m aiforme.wakeword.record ambient --minutes 10         # the room as it is: talk, music, video
     ... --split test                                              # a separate session for the evaluation
+    ... --speaker anna                                            # someone else's voice, scored separately
 
 Files go to data/wakeword/<kind>/<split>/. The test split should be a different session — another day,
 another distance from the microphone — so the evaluation does not reward remembering one sitting.
@@ -66,7 +67,7 @@ def beep() -> None:
         pass
 
 
-def takes(kind: str, n: int, split: str, device) -> None:
+def takes(kind: str, n: int, split: str, device, speaker: str) -> None:
     out = data_dir() / "wakeword" / kind / split
     stamp = time.strftime("%Y%m%d-%H%M%S")
     phrases = [e.text for e in load_examples(TRAIN)] + CONFUSABLES * 3
@@ -96,13 +97,13 @@ def takes(kind: str, n: int, split: str, device) -> None:
         if not loud_enough(audio):
             print("   Ничего не слышно — повторим это же задание.\n")
             continue
-        save(out / f"{stamp}_{i:03d}.wav", audio)
+        save(out / f"{speaker}_{stamp}_{i:03d}.wav", audio)
         i += 1
         print("   ✓ сохранено\n")
     print(f"Готово: {n} записей в {out}")
 
 
-def ambient(minutes: float, split: str, device) -> None:
+def ambient(minutes: float, split: str, device, speaker: str) -> None:
     """One file per minute, so a cut-off session keeps everything before the cut."""
     out = data_dir() / "wakeword" / "ambient" / split
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -111,7 +112,7 @@ def ambient(minutes: float, split: str, device) -> None:
           f"строчка с прогрессом, в конце — «Готово».\nЗанимайтесь своими делами — хорошо, если играет видео, "
           f"подкаст или идёт разговор. Только не говорите «{WAKE_WORD}». Ctrl+C — остановить раньше.\n")
     for m in range(total):
-        save(out / f"{stamp}_{m:02d}.wav", record(min(60.0, (minutes - m) * 60), device))
+        save(out / f"{speaker}_{stamp}_{m:02d}.wav", record(min(60.0, (minutes - m) * 60), device))
         print(f"   записано {m + 1} из {total} мин", flush=True)
     print(f"Готово: фон записан в {out}")
 
@@ -123,13 +124,14 @@ def main() -> None:
     parser.add_argument("--minutes", type=float, default=10)
     parser.add_argument("--split", choices=("train", "test"), default="train")
     parser.add_argument("--device", default=None, help="microphone index or name")
+    parser.add_argument("--speaker", default="me", help="who is speaking, a short Latin name: me, anna, ...")
     args = parser.parse_args()
     device = int(args.device) if (args.device or "").isdigit() else args.device
     try:
         if args.kind == "ambient":
-            ambient(args.minutes, args.split, device)
+            ambient(args.minutes, args.split, device, args.speaker)
         else:
-            takes(args.kind, args.n, args.split, device)
+            takes(args.kind, args.n, args.split, device, args.speaker)
     except KeyboardInterrupt:
         print("\nОстановлено.")
 

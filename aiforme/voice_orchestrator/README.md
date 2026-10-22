@@ -82,10 +82,24 @@ as the assistant runs it (`eval/results/wakeword*.json`):
 | False accepts, 2 minutes of held-out room audio | 13 (≈390 an hour) | **0** |
 
 Synthetic voices alone give a detector that would fire every ten seconds; real recordings of the voice and the room
-are what make it usable. Two minutes of audio cannot measure a false-accept rate per hour — the next step is a
-separate test session, another day and another distance from the microphone, with 50 takes and 10 minutes of room
-audio. In the first live session it woke on every «Амадеус» and carried out the commands, Whisper taking 0.6–0.8 s
-per command once warm.
+are what make it usable.
+
+**Test session.** A separate session recorded later — 50 takes and 10 minutes of another video playing — scored once,
+with nothing changed after seeing it:
+
+| | Validation (held-out takes from training sessions) | Test (separate session) |
+|---|---|---|
+| Wake words found | 29 / 30 (96.7%) | **42 / 50 (84%)** |
+| False accepts | 0 in 2 minutes | **2 in 10 minutes (≈12 an hour)** |
+
+All eight misses are the whispered takes; every other way of saying it — normal, loud, fast, slow, from two metres,
+turned away — was found 42 of 42 times. The whispers scored 0.58–0.96, under a threshold of 0.977. The threshold is
+that high because it is set just above the highest-scoring negative in validation, and even so two sounds passed it:
+a fragment of conversation (*«А? Не знаю. Это те, которые…»*) and a cough. Twelve false accepts an hour is too many to
+leave it listening all day; good wake-word detectors stay under one. Both failures point the same way — far more
+real negative audio (hours, not ten minutes, including coughs and laughter), mined for the windows the model scores
+highest, and a fresh test session to measure the result. In the first live session it woke on every «Амадеус» and
+carried out the commands, Whisper taking 0.6–0.8 s per command once warm.
 
 One finding on the way: the microphone suppresses noise, so its silence is near digital zero. Thresholds measured
 from the noise floor then counted breath, key clicks and the beep's echo as speech — the word boundaries in the

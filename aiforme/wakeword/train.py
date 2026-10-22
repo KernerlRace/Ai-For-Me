@@ -17,7 +17,7 @@ import time
 
 import numpy as np
 
-from aiforme.wakeword.dataset import build, files, read_wav
+from aiforme.wakeword.dataset import build, files, read_wav, speaker_of
 from aiforme.wakeword.detector import CONFIG, MODEL, Detector
 from aiforme.wakeword.features import FRAMES, N_MELS, SAMPLE_RATE
 
@@ -152,8 +152,14 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
 
 
 def evaluate_test(model_path=MODEL, config_path=CONFIG) -> dict | None:
-    return streaming(Detector(model_path, config_path), [read_wav(p) for p in files("positive", "test")],
-                     [read_wav(p) for p in files("ambient", "test")])
+    det = Detector(model_path, config_path)
+    takes = files("positive", "test")
+    out = streaming(det, [read_wav(p) for p in takes], [read_wav(p) for p in files("ambient", "test")])
+    speakers = sorted({speaker_of(p) for p in takes})
+    if out and len(speakers) > 1:
+        out["recall_by_speaker"] = {s: streaming(det, [read_wav(p) for p in takes if speaker_of(p) == s], [])
+                                    ["recall"] for s in speakers}
+    return out
 
 
 def streaming(det: Detector, positives: list[np.ndarray], ambient: list[np.ndarray]) -> dict | None:
@@ -204,8 +210,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-recorded", action="store_true", help="train on the Windows voices only")
     parser.add_argument("--epochs", type=int, default=25)
+    parser.add_argument("--eval-only", action="store_true", help="score the current model on the test session")
     args = parser.parse_args()
-    train(recorded=not args.no_recorded, epochs=args.epochs)
+    if args.eval_only:
+        print(json.dumps(evaluate_test(), indent=1))
+    else:
+        train(recorded=not args.no_recorded, epochs=args.epochs)
 
 
 if __name__ == "__main__":

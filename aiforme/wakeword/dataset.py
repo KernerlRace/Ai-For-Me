@@ -65,6 +65,12 @@ def _segments(audio: np.ndarray, max_gap_s: float) -> list[tuple[int, int]]:
     return [(a * FRAME, b * FRAME) for a, b in runs if (b - a) * FRAME >= 0.1 * SAMPLE_RATE]
 
 
+def speaker_of(path: Path) -> str:
+    """'anna_20261022-..._003.wav' -> 'anna'; the first recordings had no prefix and are mine."""
+    first = path.stem.split("_")[0]
+    return "me" if first[:1].isdigit() else first
+
+
 def speech_span(audio: np.ndarray) -> tuple[int, int] | None:
     """From the start of the first loud stretch to the end of the last; None if nothing stands out."""
     segs = _segments(audio, max_gap_s=0.1)
