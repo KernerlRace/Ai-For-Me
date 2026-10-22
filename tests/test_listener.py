@@ -96,3 +96,44 @@ def test_whisper_hallucinations_are_dropped(tmp_path):
     events, _ = run_listener(tmp_path, FakeSTT("Продолжение следует..."),
                              [frame(100)] * 3 + [frame(3000)] * 5 + [frame(100)] * 10)
     assert [t for t, _ in events] == ["voice.wake.detected", "voice.timeout"]
+
+
+class LoudIsSpeech:
+    """Stands in for Silero VAD: a frame is speech when it is loud."""
+
+    def __init__(self):
+        self.resets = 0
+
+    def reset(self):
+        self.resets += 1
+
+    def speech(self, frame):
+        return float(np.abs(frame).mean()) > 1000
+
+
+class Ducker:
+    def __init__(self):
+        self.calls = []
+
+    def duck(self):
+        self.calls.append("duck")
+
+    def restore(self):
+        self.calls.append("restore")
+
+
+def test_volume_is_ducked_while_recording_and_restored_before_the_command(tmp_path):
+    stt, vad, ducker = FakeSTT("Пауза."), LoudIsSpeech(), Ducker()
+    with EventBus(tmp_path / "bus.sqlite3") as bus:
+        q = queue.Queue()
+        for f in [frame(100)] * 3 + [frame(3000)] * 6 + [frame(100)] * 15:
+            q.put(f)
+        stop = threading.Event()
+        listener = Listener(bus, WakeAfter(3), stt, Endpointer(silence_s=0.4), beep=lambda f: None,
+                            vad=vad, ducker=ducker)
+        threading.Timer(0.5, stop.set).start()
+        listener.loop(q, stop)
+        topics = [e.topic for e in bus.recent()]
+    assert topics == ["voice.wake.detected", "voice.transcribed"]
+    assert ducker.calls[:2] == ["duck", "restore"] and vad.resets == 1
+    assert len(stt.audio) >= 6 * FRAME

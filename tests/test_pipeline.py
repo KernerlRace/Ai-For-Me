@@ -135,3 +135,33 @@ def test_agenda_reads_today():
     empty = ActionModule(FakeDesktop(), agenda=lambda now: [])
     out = list(empty.handle(Event("intent.recognized", {"intent": "agenda", "language": "en"})))
     assert out[-1].payload["text"] == "Nothing in the calendar today."
+
+
+def test_media_commands_say_which_way():
+    from aiforme.voice_orchestrator.pipeline import media_action
+    assert media_action("Поставь паузу на видео.") == media_action("стоп видео") == "pause"
+    assert media_action("сними с паузы") == media_action("продолжи") == media_action("unpause") == "play"
+    assert media_action("плей") == "toggle"
+
+
+def test_pause_acts_on_what_is_playing():
+    class Media(FakeDesktop):
+        def __init__(self, playing):
+            super().__init__()
+            self.playing = playing
+
+        def media(self, action):
+            self.calls.append(("media", action))
+            if action == "pause" and not self.playing:
+                return None
+            return "Врата Штейна"
+
+    module = ActionModule(Media(playing=True))
+    out = list(module.handle(Event("intent.recognized", {"intent": "media_play_pause", "text": "пауза",
+                                                         "language": "ru"})))
+    assert module.desktop.calls == [("media", "pause")]
+    assert out[0].payload["result"] == "pause: Врата Штейна" and len(out) == 1
+    idle = ActionModule(Media(playing=False))
+    out = list(idle.handle(Event("intent.recognized", {"intent": "media_play_pause", "text": "пауза",
+                                                       "language": "ru"})))
+    assert out[-1].payload["text"] == "Сейчас ничего не играет."

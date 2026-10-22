@@ -66,6 +66,7 @@ class Desktop(Protocol):
     def type_text(self, text: str) -> None: ...
     def press(self, key: str, times: int = 1) -> None: ...
     def screenshot(self) -> None: ...
+    def media(self, action: str) -> str | None: ...
     def lock(self) -> None: ...
 
 
@@ -78,7 +79,23 @@ REPLIES = {
     "agenda": ("Сегодня: {items}.", "Today: {items}."),
     "agenda_empty": ("Сегодня в календаре ничего нет.", "Nothing in the calendar today."),
     "agenda_none": ("Календарь не подключён.", "The calendar is not connected."),
+    "nothing_playing": ("Сейчас ничего не играет.", "Nothing is playing."),
+    "already_playing": ("Уже играет.", "It is already playing."),
 }
+
+# which way a play/pause command goes; resuming words are checked first: «сними с паузы» and "unpause" hold «пауз»
+RESUME_WORDS = ("продолж", "сними", "убери пауз", "включи", "запусти", "play", "resume", "continue", "unpause")
+PAUSE_WORDS = ("пауз", "стоп", "останов", "выключи", "замри", "pause", "stop", "hold")
+
+
+def media_action(text: str) -> str:
+    """«поставь видео на паузу» -> 'pause', «продолжи» -> 'play', «плей-пауза» or nothing clear -> 'toggle'."""
+    t = text.lower()
+    if any(w in t for w in RESUME_WORDS):
+        return "play"
+    if any(w in t for w in PAUSE_WORDS):
+        return "pause"
+    return "toggle"
 
 # spoken mode name -> the autopilot's mode; matched on the start of each word, so cases and forms all work
 MODE_WORDS = {
@@ -134,7 +151,7 @@ class ActionModule(Module):
             yield Event("action.done", {"intent": intent, "slots": slots, "result": mode})
             return
         try:
-            result, reply = self._do(intent, value, lang)
+            result, reply = self._do(intent, value, lang, str(p.get("text", "")))
         except ActionError as exc:
             yield Event("action.failed", {"intent": intent, "slots": slots, "error": str(exc)})
             yield _reply(REPLIES["failed"][lang].format(error=exc.ru if lang == 0 else exc))
@@ -143,7 +160,7 @@ class ActionModule(Module):
         if reply:
             yield _reply(reply)
 
-    def _do(self, intent: str, value: str, lang: int) -> tuple[str, str | None]:
+    def _do(self, intent: str, value: str, lang: int, text: str = "") -> tuple[str, str | None]:
         d = self.desktop
         match intent:
             case "open_app":
@@ -163,9 +180,16 @@ class ActionModule(Module):
             case "mute":
                 d.press("volume_mute")
                 return intent, None
-            case "media_play_pause" | "media_next":
-                d.press(intent)
-                return intent, None
+            case "media_play_pause":
+                action = media_action(text)
+                title = d.media(action)
+                if title is None:
+                    key = "already_playing" if action == "play" else "nothing_playing"
+                    return action, REPLIES[key][lang]
+                return f"{action}: {title}", None
+            case "media_next":
+                title = d.media("next")
+                return (f"next: {title}", None) if title else ("next", REPLIES["nothing_playing"][lang])
             case "screenshot":
                 d.screenshot()
                 return intent, None
