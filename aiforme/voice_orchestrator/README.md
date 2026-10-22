@@ -64,6 +64,34 @@ was scored once per model; nothing was tuned on it.</sub>
   chrome"*, *«поищи на диске»*) leave command words in the slot. App matching recovers most of these — it tries every
   span of the phrase — but `find_file` and `web_search` queries stay polluted.
 
+## Results: wake word
+
+«Амадеус» — the AI in Steins;Gate 0. The detector is a 60k-parameter CNN over 1.5 s of log-mel features, trained from
+scratch ([aiforme/wakeword](../wakeword)) on 200 recordings of my voice saying it in ten different ways (quiet, from two
+metres, followed by a command, ...), 100 recordings of other phrases and similar-sounding words (*Амадей, Асмодей,
+Мадейра*), 10 minutes of my room with a video playing, and 105 + 544 clips from the Windows voices. Every clip is
+augmented: tempo ±10%, a synthetic room, gain, noise from the room recording at 3–30 dB SNR. Windows that end inside
+the word (*«Ама…»*) are negatives, so it waits for the whole word.
+
+Scored by streaming 15% of the recordings, held out by file before training, through the exported ONNX model exactly
+as the assistant runs it (`eval/results/wakeword*.json`):
+
+| Trained on | Windows voices only | Windows voices + my recordings |
+|---|---|---|
+| Wake words found, 30 held-out takes | 26 (86.7%) | **29 (96.7%)** |
+| False accepts, 2 minutes of held-out room audio | 13 (≈390 an hour) | **0** |
+
+Synthetic voices alone give a detector that would fire every ten seconds; real recordings of the voice and the room
+are what make it usable. Two minutes of audio cannot measure a false-accept rate per hour — the next step is a
+separate test session, another day and another distance from the microphone, with 50 takes and 10 minutes of room
+audio. In the first live session it woke on every «Амадеус» and carried out the commands, Whisper taking 0.6–0.8 s
+per command once warm.
+
+One finding on the way: the microphone suppresses noise, so its silence is near digital zero. Thresholds measured
+from the noise floor then counted breath, key clicks and the beep's echo as speech — the word boundaries in the
+training clips were wrong until loudness was measured from the peak instead, and the listener's speech threshold
+was too high for a third of quiet speech.
+
 ## Results: through speech
 
 The same 152 test phrases, spoken by the Windows voices (Irina for Russian, Zira and Hazel for English), transcribed by

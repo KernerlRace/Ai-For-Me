@@ -27,7 +27,7 @@ models/*.bin
 models/*.pt
 models/*.onnx
 # trained on my own voice
-models/wakeword.json
+models/wakeword*.json
 
 # OS
 .DS_Store

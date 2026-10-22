@@ -103,3 +103,6 @@ def test_reply_is_printed_and_spoken(capsys):
     ReplyModule(spoken.append).handle(Event("assistant.reply", {"text": "It's 19:05."}))
     assert spoken == ["It's 19:05."]
     assert "It's 19:05." in capsys.readouterr().out
+    ReplyModule(spoken.append).handle(Event("action.done", {"intent": "open_app", "result": "Калькулятор"}))
+    assert spoken == ["It's 19:05."]                       # printed, not spoken
+    assert "open_app: Калькулятор" in capsys.readouterr().out
