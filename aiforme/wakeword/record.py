@@ -71,7 +71,15 @@ def takes(kind: str, n: int, split: str, device) -> None:
     stamp = time.strftime("%Y%m%d-%H%M%S")
     phrases = [e.text for e in load_examples(TRAIN)] + CONFUSABLES * 3
     random.shuffle(phrases)
-    print(f"Запись в {out}. Ctrl+C — остановиться, всё записанное сохранится.\n")
+    what = f"«{WAKE_WORD}»" if kind == "positive" else "фразу с экрана"
+    print(f"\nКак это работает — {n} записей, каждая одинаково:\n"
+          f"  1. Читаете задание.\n"
+          f"  2. Нажимаете Enter.\n"
+          f"  3. Слышите короткий писк — сразу говорите {what}.\n"
+          f"  4. Через пару секунд появится «✓ сохранено» и следующее задание.\n"
+          f"После {n}-й записи программа сама напишет «Готово» и закроется.\n"
+          f"Устали — Ctrl+C: всё записанное сохранится, потом можно запустить ещё раз.\n"
+          f"Файлы: {out}\n")
     i = 0
     while i < n:
         if kind == "positive":
@@ -80,26 +88,32 @@ def takes(kind: str, n: int, split: str, device) -> None:
             prompt = f"Скажите «{WAKE_WORD}» — {style}"
         else:
             seconds, prompt = 3.0, f"Прочитайте: «{phrases[i % len(phrases)]}»"
-        input(f"[{i + 1}/{n}] {prompt}. Enter — и говорите после сигнала ")
+        input(f"[{i + 1}/{n}] {prompt}.\n   Нажмите Enter → ")
         beep()
         time.sleep(0.15)                                   # let the beep fade
+        print("   ● говорите...", flush=True)
         audio = record(seconds, device)
         if not loud_enough(audio):
-            print("   Ничего не слышно — повторим.")
+            print("   Ничего не слышно — повторим это же задание.\n")
             continue
         save(out / f"{stamp}_{i:03d}.wav", audio)
         i += 1
+        print("   ✓ сохранено\n")
+    print(f"Готово: {n} записей в {out}")
 
 
 def ambient(minutes: float, split: str, device) -> None:
     """One file per minute, so a cut-off session keeps everything before the cut."""
     out = data_dir() / "wakeword" / "ambient" / split
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    print(f"Запись фона, {minutes:g} мин. Не говорите «{WAKE_WORD}». Хорошо, если в это время идёт разговор,"
-          " видео или подкаст на русском и английском. Ctrl+C — остановиться.")
-    for m in range(int(np.ceil(minutes))):
+    total = int(np.ceil(minutes))
+    print(f"\nЗапись фона уже идёт, нажимать ничего не нужно. Длится {minutes:g} мин: каждую минуту появится "
+          f"строчка с прогрессом, в конце — «Готово».\nЗанимайтесь своими делами — хорошо, если играет видео, "
+          f"подкаст или идёт разговор. Только не говорите «{WAKE_WORD}». Ctrl+C — остановить раньше.\n")
+    for m in range(total):
         save(out / f"{stamp}_{m:02d}.wav", record(min(60.0, (minutes - m) * 60), device))
-        print(f"   {m + 1} мин", flush=True)
+        print(f"   записано {m + 1} из {total} мин", flush=True)
+    print(f"Готово: фон записан в {out}")
 
 
 def main() -> None:

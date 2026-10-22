@@ -33,40 +33,55 @@ def files(kind: str, split: str, source: str = "recorded") -> list[Path]:
     return sorted(folder.glob("*.wav")) if folder.exists() else []
 
 
-def speech_span(audio: np.ndarray, frame: int = 160) -> tuple[int, int] | None:
-    """First and last sample of the louder part of a clip: frames above 25% of the way from the noise
-    level (10th percentile) to the loudest frame, in dB. None if nothing stands out."""
-    n = len(audio) // frame
+FRAME = 160                     # 10 ms
+
+
+def _segments(audio: np.ndarray, max_gap_s: float) -> list[tuple[int, int]]:
+    """Loud stretches of a clip, as sample ranges. Loud means within 30 dB of the loudest 10 ms and at least
+    10 dB above the background. The threshold hangs from the peak, not from the noise: a microphone with
+    noise suppression has a near-digital-silence floor, from which breath, a key click or the beep's echo
+    would all look like speech. Gaps shorter than `max_gap_s` are bridged; bursts under 100 ms are clicks."""
+    n = len(audio) // FRAME
     if n < 3:
-        return None
-    level = 10 * np.log10((audio[: n * frame].reshape(n, frame) ** 2).mean(axis=1) + 1e-10)
+        return []
+    level = 10 * np.log10((audio[: n * FRAME].reshape(n, FRAME) ** 2).mean(axis=1) + 1e-10)
     floor, peak = np.percentile(level, 10), level.max()
     if peak - floor < 12:
-        return None
-    active = np.flatnonzero(level > floor + 0.25 * (peak - floor))
-    return int(active[0] * frame), int((active[-1] + 1) * frame)
+        return []
+    active = level > max(peak - 30, floor + 10)
+    runs, start, gap = [], None, 0
+    for i, on in enumerate(active):
+        if on:
+            if start is None:
+                start = i
+            gap, last = 0, i
+        elif start is not None:
+            gap += 1
+            if gap * FRAME / SAMPLE_RATE >= max_gap_s:
+                runs.append((start, last + 1))
+                start, gap = None, 0
+    if start is not None:
+        runs.append((start, last + 1))
+    return [(a * FRAME, b * FRAME) for a, b in runs if (b - a) * FRAME >= 0.1 * SAMPLE_RATE]
+
+
+def speech_span(audio: np.ndarray) -> tuple[int, int] | None:
+    """From the start of the first loud stretch to the end of the last; None if nothing stands out."""
+    segs = _segments(audio, max_gap_s=0.1)
+    return (segs[0][0], segs[-1][1]) if segs else None
 
 
 def word_span(audio: np.ndarray) -> tuple[int, int] | None:
-    """Where the wake word is. Alone, it is the whole speech; before a command it is the first burst of
-    speech, which ends at the first pause of at least 120 ms or, failing that, 1.0 s after the start."""
-    span = speech_span(audio)
-    if span is None:
+    """Where the wake word is: the first stretch of speech followed by a pause of at least 200 ms — the
+    whole speech when it is said alone, the part before the comma when a command follows. Without such a
+    pause (the command said in one breath) the word is taken as the first 1.0 s."""
+    segs = _segments(audio, max_gap_s=0.2)
+    if not segs:
         return None
-    start, end = span
-    if end - start <= int(1.45 * SAMPLE_RATE):    # a slow «Амадеус» alone is up to 1.4 s
-        return span
-    frame = 160
-    seg = audio[start:end]
-    n = len(seg) // frame
-    level = 10 * np.log10((seg[: n * frame].reshape(n, frame) ** 2).mean(axis=1) + 1e-10)
-    quiet = level < np.percentile(level, 90) - 20
-    run = 0
-    for i in range(int(0.25 * SAMPLE_RATE / frame), min(n, int(1.5 * SAMPLE_RATE / frame))):
-        run = run + 1 if quiet[i] else 0
-        if run >= 12:
-            return start, start + (i - run + 1) * frame
-    return start, start + int(1.0 * SAMPLE_RATE)
+    start, end = segs[0]
+    if end - start > int(1.45 * SAMPLE_RATE):    # longer than a slow «Амадеус»: the command ran on
+        end = start + int(1.0 * SAMPLE_RATE)
+    return start, end
 
 
 # --- augmentation ---------------------------------------------------------------------------------------

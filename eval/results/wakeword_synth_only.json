@@ -1,0 +1,19 @@
+{
+ "threshold": 0.692794144153595,
+ "consecutive": 2,
+ "refractory_s": 1.5,
+ "trained_on_recordings": false,
+ "parameters": 60465,
+ "epochs": 25,
+ "fit_windows": 2899,
+ "val_windows": 518,
+ "val_recall_at_threshold": 0.9291666666666667,
+ "val_streaming": {
+  "recall": 0.8666666666666667,
+  "positives": 30,
+  "false_accepts": 13,
+  "ambient_minutes": 2.0,
+  "false_accepts_per_hour": 390.0
+ },
+ "test": null
+}

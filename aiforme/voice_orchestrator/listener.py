@@ -41,7 +41,8 @@ class Endpointer:
     no_speech_s: float = 3.0    # give up if nothing is said after the wake word
     max_s: float = 15.0         # hard limit, for dictation
     ratio: float = 3.0          # speech is this many times louder than the background...
-    min_rms: float = 300.0      # ...and at least this loud
+    min_rms: float = 60.0       # ...and at least this loud. Low on purpose: with a noise-suppressing
+                                # microphone silence is ~1 and a third of quiet speech is under 300
     noise: float = 100.0        # background level, updated while idle
 
     def observe_noise(self, rms: float) -> None:
@@ -194,6 +195,7 @@ class Listener:
                 continue
             if ended == "no_speech":
                 self.bus.publish(Event("voice.timeout", source="voice_listener"))
+                print("(no command heard)", flush=True)
                 self.beep(440)
             else:
                 self._transcribe(np.concatenate(recording))

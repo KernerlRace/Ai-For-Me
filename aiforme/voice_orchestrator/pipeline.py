@@ -154,13 +154,17 @@ def _reply(text: str) -> Event:
 
 
 class ReplyModule(Module):
+    """Prints and speaks replies; completed actions are printed only, so silent ones still show up."""
     name = "voice_reply"
-    subscribes = ("assistant.reply",)
+    subscribes = ("assistant.reply", "action.done")
 
     def __init__(self, speak: Callable[[str], None] | None = None):
         self.speak = speak
 
     def handle(self, event: Event):
+        if event.topic == "action.done":
+            print(f"  ✓ {event.payload.get('intent')}: {event.payload.get('result')}", flush=True)
+            return
         text = str(event.payload.get("text", ""))
         print(f"assistant: {text}", flush=True)
         if self.speak and text:

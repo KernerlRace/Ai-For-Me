@@ -82,10 +82,17 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
 
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    clips_fit, clips_val = {}, {}
+    clips_fit, clips_val, recorded_val = {}, {}, {}
     for kind in ("positive", "negative", "ambient"):
-        clips = load(kind, "train", synth=kind != "ambient", recorded=recorded)
-        clips_fit[kind], clips_val[kind] = split_files(clips, 0.15, rng)
+        # synthetic and recorded clips are split separately, so validation has its share of each
+        fit_s, val_s = split_files(load(kind, "train", synth=kind != "ambient", recorded=False), 0.15, rng)
+        # recordings are always split the same way, so a synthetic-only model is scored on the same takes
+        fit_r, val_r = split_files(load(kind, "train", synth=False, recorded=True), 0.15, rng)
+        if not recorded:
+            fit_r, val_used = [], []
+        else:
+            val_used = val_r
+        clips_fit[kind], clips_val[kind], recorded_val[kind] = fit_s + fit_r, val_s + val_used, val_r
     noise = clips_fit["ambient"] + coloured_noise(rng)
     t0 = time.perf_counter()
     X, y = build(clips_fit, noise, seed=seed)
@@ -122,17 +129,21 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
 
     pv = _predict(model, Xvt)
     threshold = float(max(0.5, min(0.99, np.max(pv[yv == 0]) + 0.01)))
+    model_path = MODEL if recorded else MODEL.with_name("wakeword_synth_only.onnx")
+    config_path = CONFIG if recorded else CONFIG.with_name("wakeword_synth_only.json")
     MODEL.parent.mkdir(exist_ok=True)
     wrapped = Normalized(model.eval(), mean.astype(np.float32), std.astype(np.float32))
-    torch.onnx.export(wrapped, torch.zeros(1, 1, N_MELS, FRAMES), str(MODEL), input_names=["features"],
+    torch.onnx.export(wrapped, torch.zeros(1, 1, N_MELS, FRAMES), str(model_path), input_names=["features"],
                       output_names=["logit"], dynamic_axes={"features": {0: "batch"}}, dynamo=False)
     config = {"threshold": threshold, "consecutive": 2, "refractory_s": 1.5, "trained_on_recordings": recorded,
               "parameters": sum(p.numel() for p in model.parameters()), "epochs": epochs}
-    CONFIG.write_text(json.dumps(config, indent=1), encoding="utf-8")
+    config_path.write_text(json.dumps(config, indent=1), encoding="utf-8")
 
     report = {**config, "fit_windows": len(y), "val_windows": len(yv),
               "val_recall_at_threshold": float(np.mean(pv[yv == 1] >= threshold)),
-              "test": evaluate_test()}
+              "val_streaming": streaming(Detector(model_path, config_path), recorded_val["positive"],
+                                         recorded_val["ambient"]),
+              "test": evaluate_test(model_path, config_path)}
     RESULTS.mkdir(parents=True, exist_ok=True)
     name = "wakeword" if recorded else "wakeword_synth_only"
     (RESULTS / f"{name}.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
@@ -140,12 +151,16 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
     return report
 
 
-def evaluate_test() -> dict | None:
-    positives = [read_wav(p) for p in files("positive", "test")]
-    ambient = [read_wav(p) for p in files("ambient", "test")]
+def evaluate_test(model_path=MODEL, config_path=CONFIG) -> dict | None:
+    return streaming(Detector(model_path, config_path), [read_wav(p) for p in files("positive", "test")],
+                     [read_wav(p) for p in files("ambient", "test")])
+
+
+def streaming(det: Detector, positives: list[np.ndarray], ambient: list[np.ndarray]) -> dict | None:
+    """Recordings streamed through the detector as the assistant hears them: recall over takes of the wake
+    word (each padded with 0.6 s of silence), false accepts over the room recording."""
     if not positives and not ambient:
         return None
-    det = Detector()
     out = {}
     if positives:
         pad = np.zeros(int(0.6 * SAMPLE_RATE), np.float32)
