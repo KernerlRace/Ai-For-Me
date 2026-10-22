@@ -6,8 +6,11 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 1 done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
-> Whisper on the GPU, intent recognition in Russian and English (92.8% on held-out phrases, 90.1% through speech) and
+> **Status:** Phase 2 under way — the [mode autopilot](aiforme/mode_autopilot) switches the machine between normal,
+> coding, gaming and meeting modes on its own, with its own calendar and the first page of the
+> [dashboard](aiforme/dashboard) (FastAPI + React); the learned mode model waits for weeks of activity data.
+> Phase 1 is done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
+> Whisper on the GPU, intent recognition in Russian and English (92.4% on held-out phrases, 90.6% through speech) and
 > 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings with hard-negative mining (90% of wake words in a separate test session, no false accepts in 20 minutes of held-out audio). Phase 0 — the event
 > bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
 > phased build order are written up in [ROADMAP.md](ROADMAP.md).
@@ -66,9 +69,9 @@ class Echo(Module):
 
 ## Tech stack
 
-In use: Python · PyTorch · ONNX Runtime · faster-whisper · sentence-transformers · scikit-learn · NumPy · SQLite · sounddevice · Windows API (ctypes)
+In use: Python · PyTorch · ONNX Runtime · faster-whisper · sentence-transformers · scikit-learn · NumPy · SQLite · sounddevice · psutil · Windows API (ctypes) · FastAPI · React · TypeScript · Vite · FullCalendar
 
-Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma · FastAPI · React
+Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma
 
 ## Project structure
 
@@ -79,6 +82,9 @@ Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · 
 | `aiforme/core/module.py` | The `Module` interface and the loop that runs modules against the bus |
 | `aiforme/core/memory.py` | Basic long-term memory: JSON values under (namespace, key) |
 | `aiforme/voice_orchestrator/` | Phase 1: listener, Whisper, intent classifier, Windows actions — [its README](aiforme/voice_orchestrator/README.md) has the results |
+| `aiforme/mode_autopilot/` | Phase 2: activity sampling, mode rules, what each mode does, the activity log |
+| `aiforme/calendar/` | The assistant's own calendar and the watcher that announces events on the bus |
+| `aiforme/dashboard/` | Local web UI: FastAPI backend, React + Vite + FullCalendar frontend in `web/` |
 | `aiforme/wakeword/` | Own wake-word model: recording tool, synthetic data, augmentation, CNN training, ONNX detector |
 | `eval/results/` | Every evaluation as JSON, including each test error |
 | `aiforme/__main__.py` | Command line: `run` the assistant, `say` a typed command, publish and tail events |
@@ -109,7 +115,7 @@ uv run python -m aiforme tail -n 20 'voice.*'
 - [x] Vision, module list, architecture and build order
 - [x] Phase 0 — repository layout, shared event bus, basic memory, CI and tests
 - [x] Phase 1 — voice orchestrator: own wake-word model, Whisper STT, 14 intents, four embeddings compared
-- [ ] Phase 2 — mode autopilot: process detection, calendar integration
+- [ ] Phase 2 — mode autopilot: process detection, own calendar, mode rules and voice ✔; learned mode model
 - [ ] Phase 3 — active learning loop: corrections UI, retraining, accuracy over time
 - [ ] Phase 4 — vision agent: screenshot + VLM on simple tasks, then arbitrary actions
 - [ ] Phase 5 — finance tracker: shifts → pay and tax, receipt OCR and categorization, savings goals

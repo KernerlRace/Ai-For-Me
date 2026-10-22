@@ -1,13 +1,13 @@
 {
  "embedder": "e5",
  "whisper": "large-v3-turbo on cuda",
- "phrases": 152,
- "transcript_exact": 0.8947,
- "intent_accuracy_on_text": 0.9276,
- "intent_accuracy_on_speech": 0.9013,
- "in_scope_on_text": 0.9375,
- "in_scope_on_speech": 0.9062,
- "slot_end_to_end_on_speech": 0.4821,
+ "phrases": 170,
+ "transcript_exact": 0.9059,
+ "intent_accuracy_on_text": 0.9235,
+ "intent_accuracy_on_speech": 0.9059,
+ "in_scope_on_text": 0.9384,
+ "in_scope_on_speech": 0.9178,
+ "slot_end_to_end_on_speech": 0.4697,
  "rows": [
   {
    "text": "Открой Telegram.",
@@ -71,8 +71,8 @@
    "gold": "open_app",
    "transcript_exact": false,
    "intent_on_text": true,
-   "intent_on_speech": false,
-   "pred_on_speech": "out_of_scope",
+   "intent_on_speech": true,
+   "pred_on_speech": "open_app",
    "slot_on_speech": false
   },
   {
@@ -1418,6 +1418,204 @@
    "slot_on_speech": null
   },
   {
+   "text": "Включи режим игры.",
+   "heard": "Включи режим игры.",
+   "language": "ru",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": true
+  },
+  {
+   "text": "давай игровой режим",
+   "heard": "Давай игровой режим.",
+   "language": "ru",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "режим программирования",
+   "heard": "Режим программирования.",
+   "language": "ru",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": true
+  },
+  {
+   "text": "переключи на обычный режим",
+   "heard": "Переключи на обычный режим.",
+   "language": "ru",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "у меня созвон, включи режим встречи",
+   "heard": "У меня созвон, включи режим встречи.",
+   "language": "ru",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "Enable gaming mode.",
+   "heard": "Enable gaming mode",
+   "language": "en",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "switch to work mode",
+   "heard": "Switch to work mode.",
+   "language": "en",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": true
+  },
+  {
+   "text": "put it in meeting mode",
+   "heard": "put it in meeting mode",
+   "language": "en",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "go back to normal",
+   "heard": "Go back to normal.",
+   "language": "en",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": false
+  },
+  {
+   "text": "auto mode please",
+   "heard": "Auto mode please",
+   "language": "en",
+   "gold": "set_mode",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "set_mode",
+   "slot_on_speech": true
+  },
+  {
+   "text": "Что сегодня в планах?",
+   "heard": "Что сегодня в планах?",
+   "language": "ru",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "какие у меня дела на сегодня",
+   "heard": "Какие у меня дела на сегодня?",
+   "language": "ru",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "есть встречи сегодня?",
+   "heard": "Есть встречи сегодня.",
+   "language": "ru",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "расскажи расписание",
+   "heard": "Расскажи расписание.",
+   "language": "ru",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": false,
+   "intent_on_speech": false,
+   "pred_on_speech": "out_of_scope",
+   "slot_on_speech": null
+  },
+  {
+   "text": "What's on today?",
+   "heard": "What's on today?",
+   "language": "en",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "do I have any meetings today",
+   "heard": "Do I have any meetings today?",
+   "language": "en",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "read me my schedule",
+   "heard": "Read me my schedule.",
+   "language": "en",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
+   "text": "what's planned for today",
+   "heard": "What's planned for today?",
+   "language": "en",
+   "gold": "agenda",
+   "transcript_exact": true,
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "agenda",
+   "slot_on_speech": null
+  },
+  {
    "text": "закажи такси до дома",
    "heard": "Закажи такси до дома.",
    "language": "ru",
@@ -1544,14 +1742,14 @@
    "language": "ru",
    "gold": "out_of_scope",
    "transcript_exact": true,
-   "intent_on_text": true,
-   "intent_on_speech": true,
-   "pred_on_speech": "out_of_scope",
+   "intent_on_text": false,
+   "intent_on_speech": false,
+   "pred_on_speech": "dictate",
    "slot_on_speech": null
   },
   {
    "text": "book a taxi home",
-   "heard": "Book a taxi home",
+   "heard": "Book a taxi home.",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1562,7 +1760,7 @@
   },
   {
    "text": "set a timer for five minutes",
-   "heard": "Set a timer for 5 minutes.",
+   "heard": "set a timer for 5 minutes",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": false,
@@ -1573,7 +1771,7 @@
   },
   {
    "text": "sing a song",
-   "heard": "Sing a song",
+   "heard": "Sing a song.",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1595,7 +1793,7 @@
   },
   {
    "text": "shut down the computer in an hour",
-   "heard": "Shut down the computer in an hour",
+   "heard": "Shut down the computer in an hour.",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1606,7 +1804,7 @@
   },
   {
    "text": "reboot the system",
-   "heard": "Reboot the system",
+   "heard": "reboot the system",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1617,7 +1815,7 @@
   },
   {
    "text": "remind me to call the bank",
-   "heard": "remind me to call the bank",
+   "heard": "Remind me to call the bank",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1628,7 +1826,7 @@
   },
   {
    "text": "turn on the air conditioner",
-   "heard": "Turn on the air conditioner.",
+   "heard": "Turn on the air conditioner",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,
@@ -1672,7 +1870,7 @@
   },
   {
    "text": "let's chat",
-   "heard": "Let's chat.",
+   "heard": "Let's chat",
    "language": "en",
    "gold": "out_of_scope",
    "transcript_exact": true,

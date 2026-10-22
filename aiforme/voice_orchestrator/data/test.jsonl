@@ -126,6 +126,24 @@
 {"text": "Nah, never mind.", "intent": "cancel"}
 {"text": "forget about it", "intent": "cancel"}
 {"text": "oops nothing", "intent": "cancel"}
+{"text": "Включи режим игры.", "intent": "set_mode", "slots": {"mode": "игры"}}
+{"text": "давай игровой режим", "intent": "set_mode", "slots": {"mode": "игровой"}}
+{"text": "режим программирования", "intent": "set_mode", "slots": {"mode": "программирования"}}
+{"text": "переключи на обычный режим", "intent": "set_mode", "slots": {"mode": "обычный"}}
+{"text": "у меня созвон, включи режим встречи", "intent": "set_mode", "slots": {"mode": "встречи"}}
+{"text": "Enable gaming mode.", "intent": "set_mode", "slots": {"mode": "gaming"}}
+{"text": "switch to work mode", "intent": "set_mode", "slots": {"mode": "work"}}
+{"text": "put it in meeting mode", "intent": "set_mode", "slots": {"mode": "meeting"}}
+{"text": "go back to normal", "intent": "set_mode", "slots": {"mode": "normal"}}
+{"text": "auto mode please", "intent": "set_mode", "slots": {"mode": "auto"}}
+{"text": "Что сегодня в планах?", "intent": "agenda"}
+{"text": "какие у меня дела на сегодня", "intent": "agenda"}
+{"text": "есть встречи сегодня?", "intent": "agenda"}
+{"text": "расскажи расписание", "intent": "agenda"}
+{"text": "What's on today?", "intent": "agenda"}
+{"text": "do I have any meetings today", "intent": "agenda"}
+{"text": "read me my schedule", "intent": "agenda"}
+{"text": "what's planned for today", "intent": "agenda"}
 {"text": "закажи такси до дома", "intent": "out_of_scope"}
 {"text": "поставь таймер на пять минут", "intent": "out_of_scope"}
 {"text": "спой песню", "intent": "out_of_scope"}

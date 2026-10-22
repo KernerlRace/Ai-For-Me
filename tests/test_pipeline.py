@@ -106,3 +106,32 @@ def test_reply_is_printed_and_spoken(capsys):
     ReplyModule(spoken.append).handle(Event("action.done", {"intent": "open_app", "result": "Калькулятор"}))
     assert spoken == ["It's 19:05."]                       # printed, not spoken
     assert "open_app: Калькулятор" in capsys.readouterr().out
+
+
+def test_mode_names():
+    from aiforme.voice_orchestrator.pipeline import mode_of
+    assert mode_of("игровой") == mode_of("режим игры") == mode_of("Gaming") == "gaming"
+    assert mode_of("кодинга") == mode_of("рабочий") == mode_of("work") == "coding"
+    assert mode_of("созвона") == mode_of("встречи") == "meeting"
+    assert mode_of("обычный") == "normal" and mode_of("автоматический") == "auto"
+    assert mode_of("весёлый") is None
+
+
+def test_set_mode_asks_the_autopilot():
+    _, out = run_actions({"intent": "set_mode", "slots": {"mode": "игровой"}, "language": "ru"})
+    assert [(e.topic, e.payload.get("mode")) for e in out] == [("mode.requested", "gaming"), ("action.done", None)]
+    assert out[0].payload["language"] == "ru"
+    _, out = run_actions({"intent": "set_mode", "slots": {"mode": "весёлый"}, "language": "ru"})
+    assert [e.topic for e in out] == ["action.failed", "assistant.reply"]
+
+
+def test_agenda_reads_today():
+    from types import SimpleNamespace
+    today = [SimpleNamespace(start=datetime(2026, 10, 21, 10, 0), title="Созвон"),
+             SimpleNamespace(start=datetime(2026, 10, 21, 12, 0), title="Смена")]
+    module = ActionModule(FakeDesktop(), now=lambda: datetime(2026, 10, 21, 9, 0), agenda=lambda now: today)
+    out = list(module.handle(Event("intent.recognized", {"intent": "agenda", "language": "ru"})))
+    assert out[-1].payload["text"] == "Сегодня: 10:00 Созвон, 12:00 Смена."
+    empty = ActionModule(FakeDesktop(), agenda=lambda now: [])
+    out = list(empty.handle(Event("intent.recognized", {"intent": "agenda", "language": "en"})))
+    assert out[-1].payload["text"] == "Nothing in the calendar today."
