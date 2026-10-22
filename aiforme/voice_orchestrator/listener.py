@@ -2,9 +2,9 @@
 
 The microphone is read in 80 ms frames. While idle, every frame goes to the wake-word detector (our own
 CNN for «Амадеус», aiforme/wakeword) and updates the background noise level. After the wake word the frames
-are recorded until the speaker stops — loudness falls back to the noise level for `silence_s` — and the
-recording goes to Whisper. The result is published as `voice.transcribed`; the intent module takes it from
-there. With `--push-to-talk` the Enter key replaces the wake word.
+are recorded, with the computer's volume turned down, until the speaker stops — Silero VAD hears no speech for
+`silence_s` — and the recording goes to Whisper. The result is published as `voice.transcribed`; the intent
+module takes it from there. With `--push-to-talk` the Enter key replaces the wake word.
 """
 from __future__ import annotations
 
@@ -36,8 +36,9 @@ HALLUCINATIONS = {"продолжение следует", "субтитры с�
 
 @dataclass
 class Endpointer:
-    """Decides from frame loudness (RMS of int16 samples) when a command is over."""
-    silence_s: float = 0.8      # quiet after speech that ends the command
+    """Decides when a command is over: from a speech detector's verdict per frame (`step`), or, without one,
+    from frame loudness (`push`, RMS of int16 samples) against the background level."""
+    silence_s: float = 0.9      # quiet after speech that ends the command
     no_speech_s: float = 3.0    # give up if nothing is said after the wake word
     max_s: float = 15.0         # hard limit, for dictation
     ratio: float = 3.0          # speech is this many times louder than the background...
@@ -54,8 +55,12 @@ class Endpointer:
 
     def push(self, rms: float) -> str | None:
         """Returns None while the command goes on, else why it ended: 'end', 'no_speech' or 'max'."""
+        return self.step(rms > max(self.noise * self.ratio, self.min_rms))
+
+    def step(self, speech: bool) -> str | None:
+        """Like `push`, for a frame already judged speech or not."""
         self._elapsed += 1
-        if rms > max(self.noise * self.ratio, self.min_rms):
+        if speech:
             self._speech, self._quiet = True, 0
         else:
             self._quiet += 1
@@ -70,6 +75,48 @@ class Endpointer:
 
 def _frames(seconds: float) -> int:
     return max(1, round(seconds / FRAME_S))
+
+
+class SileroVAD:
+    """Silero VAD v6 (shipped with faster-whisper) run as a stream: 512-sample chunks with 64 samples of
+    context and the recurrent state carried over, a speech probability per 32 ms.
+
+    Loudness cannot tell a voice from a video playing next to the microphone; this model judges speech
+    itself, so a command is not cut off mid-word, nor taken for silence, because a video was loud."""
+    CHUNK, CONTEXT = 512, 64
+
+    def __init__(self, threshold: float = 0.5):
+        from faster_whisper.vad import get_vad_model
+        self._session = get_vad_model().session
+        self.threshold = threshold
+        self.reset()
+
+    def reset(self) -> None:
+        self._h = np.zeros((1, 1, 128), np.float32)
+        self._c = np.zeros((1, 1, 128), np.float32)
+        self._context = np.zeros(self.CONTEXT, np.float32)
+        self._pending = np.zeros(0, np.float32)
+
+    def push(self, frame: np.ndarray) -> list[float]:
+        """Speech probabilities of the 32 ms chunks this frame completes."""
+        x = frame.astype(np.float32) / 32768.0 if frame.dtype == np.int16 else frame.astype(np.float32)
+        self._pending = np.concatenate([self._pending, x])
+        probs = []
+        while len(self._pending) >= self.CHUNK:
+            chunk, self._pending = self._pending[:self.CHUNK], self._pending[self.CHUNK:]
+            batch = np.concatenate([self._context, chunk])[None, :]
+            out, self._h, self._c = self._session.run(None, {"input": batch, "h": self._h, "c": self._c})
+            probs.append(float(np.asarray(out).reshape(-1)[-1]))
+            self._context = chunk[-self.CONTEXT:]
+        return probs
+
+    def speech(self, frame: np.ndarray) -> bool:
+        return max(self.push(frame), default=0.0) >= self.threshold
+
+
+class Ducker(Protocol):
+    def duck(self) -> None: ...
+    def restore(self) -> None: ...
 
 
 def rms(frame: np.ndarray) -> float:
@@ -154,11 +201,13 @@ def _add_cuda_dlls() -> None:
 class Listener:
     def __init__(self, bus: EventBus, wake: WakeWord, stt: WhisperSTT | Callable,
                  endpointer: Endpointer | None = None, beep: Callable[[int], None] | None = None,
-                 input_device: int | str | None = None):
+                 input_device: int | str | None = None, vad: SileroVAD | None = None,
+                 ducker: Ducker | None = None):
         self.bus, self.wake, self.stt = bus, wake, stt
         self.endpointer = endpointer or Endpointer()
         self.beep = beep or _beep
         self.input_device = input_device
+        self.vad, self.ducker = vad, ducker
 
     def run(self, stop: threading.Event) -> None:
         import sounddevice as sd
@@ -174,6 +223,13 @@ class Listener:
 
     def loop(self, frames: queue.Queue, stop: threading.Event) -> None:
         """The state machine on its own, so tests can feed it frames without a microphone."""
+        try:
+            self._loop(frames, stop)
+        finally:
+            if self.ducker:
+                self.ducker.restore()               # never leave the machine quiet
+
+    def _loop(self, frames: queue.Queue, stop: threading.Event) -> None:
         recording: list[np.ndarray] | None = None
         while not stop.is_set():
             try:
@@ -186,13 +242,19 @@ class Listener:
                 if self.wake.detected(frame):
                     self.bus.publish(Event("voice.wake.detected", source="voice_listener"))
                     self.beep(880)
+                    if self.ducker:
+                        self.ducker.duck()
+                    if self.vad:
+                        self.vad.reset()
                     self.endpointer.start()
                     recording = []
                 continue
             recording.append(frame)
-            ended = self.endpointer.push(level)
+            ended = self.endpointer.step(self.vad.speech(frame)) if self.vad else self.endpointer.push(level)
             if ended is None:
                 continue
+            if self.ducker:
+                self.ducker.restore()               # before the command runs: «громче» must act on the real level
             if ended == "no_speech":
                 self.bus.publish(Event("voice.timeout", source="voice_listener"))
                 print("(no command heard)", flush=True)

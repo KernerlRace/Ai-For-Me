@@ -1,51 +1,66 @@
 {
  "embedder": "charcnn",
- "train_examples": 289,
+ "train_examples": 314,
  "test_examples": 170,
- "threshold": 0.3,
+ "threshold": 0.35,
  "cv_on_train": {
-  "in_scope_accuracy": 0.528957528957529,
-  "oos_recall": 0.8666666666666667,
-  "score": 0.6978120978120979
+  "in_scope_accuracy": 0.5195729537366548,
+  "oos_recall": 0.9393939393939394,
+  "score": 0.7294834465652971
  },
- "accuracy": 0.711764705882353,
- "in_scope_accuracy": 0.6917808219178082,
- "in_scope_accuracy_ru": 0.6438356164383562,
- "in_scope_accuracy_en": 0.7397260273972602,
- "oos_recall": 0.8333333333333334,
- "false_rejections": 0.2808219178082192,
- "slot_end_to_end": 0.42424242424242425,
- "slot_given_intent": 0.6666666666666666,
- "fit_seconds": 45.37,
- "latency_ms": 1.23,
+ "accuracy": 0.7235294117647059,
+ "in_scope_accuracy": 0.6986301369863014,
+ "in_scope_accuracy_ru": 0.684931506849315,
+ "in_scope_accuracy_en": 0.7123287671232876,
+ "oos_recall": 0.875,
+ "false_rejections": 0.2876712328767123,
+ "slot_end_to_end": 0.4090909090909091,
+ "slot_given_intent": 0.6923076923076923,
+ "fit_seconds": 43.47,
+ "latency_ms": 1.02,
  "errors": [
   {
-   "text": "а можешь запустить стим",
+   "text": "открой ютуб музыку",
    "gold": "open_app",
    "pred": "out_of_scope",
-   "confidence": 0.26,
+   "confidence": 0.316,
    "gold_slots": {
-    "app": "стим"
+    "app": "ютуб музыку"
    },
    "pred_slots": {},
    "best_guess": "open_app"
   },
   {
+   "text": "а можешь запустить стим",
+   "gold": "open_app",
+   "pred": "open_app",
+   "confidence": 0.442,
+   "gold_slots": {
+    "app": "стим"
+   },
+   "pred_slots": {
+    "app": "а можешь запустить стим"
+   },
+   "best_guess": ""
+  },
+  {
    "text": "could you launch chrome",
    "gold": "open_app",
-   "pred": "out_of_scope",
-   "confidence": 0.245,
+   "pred": "open_app",
+   "confidence": 0.39,
    "gold_slots": {
     "app": "chrome"
    },
-   "pred_slots": {},
-   "best_guess": "open_app"
+   "pred_slots": {
+    "app": "could you launch chrome"
+   },
+   "best_guess": ""
   },
   {
    "text": "start up photoshop",
    "gold": "open_app",
    "pred": "out_of_scope",
-   "confidence": 0.213,
+   "confidence": 0.278,
    "gold_slots": {
     "app": "photoshop"
    },
@@ -56,7 +71,7 @@
    "text": "open youtube music",
    "gold": "open_app",
    "pred": "out_of_scope",
-   "confidence": 0.234,
+   "confidence": 0.206,
    "gold_slots": {
     "app": "youtube music"
    },
@@ -67,7 +82,7 @@
    "text": "bring up discord",
    "gold": "open_app",
    "pred": "out_of_scope",
-   "confidence": 0.159,
+   "confidence": 0.229,
    "gold_slots": {
     "app": "discord"
    },
@@ -78,7 +93,7 @@
    "text": "please open steam",
    "gold": "open_app",
    "pred": "open_app",
-   "confidence": 0.755,
+   "confidence": 0.69,
    "gold_slots": {
     "app": "steam"
    },
@@ -91,7 +106,7 @@
    "text": "выруби дискорд",
    "gold": "close_app",
    "pred": "out_of_scope",
-   "confidence": 0.171,
+   "confidence": 0.265,
    "gold_slots": {
     "app": "дискорд"
    },
@@ -102,18 +117,18 @@
    "text": "заверши стим",
    "gold": "close_app",
    "pred": "out_of_scope",
-   "confidence": 0.24,
+   "confidence": 0.23,
    "gold_slots": {
     "app": "стим"
    },
    "pred_slots": {},
-   "best_guess": "dictate"
+   "best_guess": "close_app"
   },
   {
    "text": "close down telegram",
    "gold": "close_app",
    "pred": "close_app",
-   "confidence": 0.687,
+   "confidence": 0.424,
    "gold_slots": {
     "app": "telegram"
    },
@@ -126,7 +141,7 @@
    "text": "please close spotify",
    "gold": "close_app",
    "pred": "close_app",
-   "confidence": 0.696,
+   "confidence": 0.649,
    "gold_slots": {
     "app": "spotify"
    },
@@ -139,7 +154,7 @@
    "text": "найди файл с отчетом за март",
    "gold": "find_file",
    "pred": "find_file",
-   "confidence": 0.646,
+   "confidence": 0.776,
    "gold_slots": {
     "query": "отчетом за март"
    },
@@ -152,18 +167,18 @@
    "text": "где у меня лежит резюме",
    "gold": "find_file",
    "pred": "out_of_scope",
-   "confidence": 0.19,
+   "confidence": 0.15,
    "gold_slots": {
     "query": "резюме"
    },
    "pred_slots": {},
-   "best_guess": "agenda"
+   "best_guess": "find_file"
   },
   {
    "text": "поищи на диске фото паспорта",
    "gold": "find_file",
    "pred": "out_of_scope",
-   "confidence": 0.239,
+   "confidence": 0.325,
    "gold_slots": {
     "query": "фото паспорта"
    },
@@ -174,7 +189,7 @@
    "text": "найди папку загрузки",
    "gold": "find_file",
    "pred": "out_of_scope",
-   "confidence": 0.284,
+   "confidence": 0.262,
    "gold_slots": {
     "query": "загрузки"
    },
@@ -185,7 +200,7 @@
    "text": "where is my resume",
    "gold": "find_file",
    "pred": "out_of_scope",
-   "confidence": 0.197,
+   "confidence": 0.315,
    "gold_slots": {
     "query": "resume"
    },
@@ -196,42 +211,40 @@
    "text": "search for the passport photo",
    "gold": "find_file",
    "pred": "out_of_scope",
-   "confidence": 0.262,
+   "confidence": 0.204,
    "gold_slots": {
     "query": "passport photo"
    },
    "pred_slots": {},
-   "best_guess": "web_search"
+   "best_guess": "open_app"
   },
   {
    "text": "Where's the presentation?",
    "gold": "find_file",
-   "pred": "find_file",
-   "confidence": 0.42,
+   "pred": "out_of_scope",
+   "confidence": 0.284,
    "gold_slots": {
     "query": "presentation"
-   },
-   "pred_slots": {
-    "query": "where's the presentation"
-   },
-   "best_guess": ""
-  },
-  {
-   "text": "locate the downloads folder",
-   "gold": "find_file",
-   "pred": "out_of_scope",
-   "confidence": 0.186,
-   "gold_slots": {
-    "query": "downloads"
    },
    "pred_slots": {},
    "best_guess": "find_file"
   },
   {
+   "text": "locate the downloads folder",
+   "gold": "find_file",
+   "pred": "out_of_scope",
+   "confidence": 0.158,
+   "gold_slots": {
+    "query": "downloads"
+   },
+   "pred_slots": {},
+   "best_guess": "volume_down"
+  },
+  {
    "text": "напечатай с днем рождения",
    "gold": "dictate",
    "pred": "out_of_scope",
-   "confidence": 0.207,
+   "confidence": 0.195,
    "gold_slots": {
     "text": "с днем рождения"
    },
@@ -242,7 +255,7 @@
    "text": "набери текст спасибо за помощь",
    "gold": "dictate",
    "pred": "out_of_scope",
-   "confidence": 0.168,
+   "confidence": 0.338,
    "gold_slots": {
     "text": "спасибо за помощь"
    },
@@ -253,7 +266,7 @@
    "text": "введи привет это я",
    "gold": "dictate",
    "pred": "out_of_scope",
-   "confidence": 0.158,
+   "confidence": 0.131,
    "gold_slots": {
     "text": "привет это я"
    },
@@ -264,18 +277,18 @@
    "text": "write happy birthday",
    "gold": "dictate",
    "pred": "out_of_scope",
-   "confidence": 0.136,
+   "confidence": 0.232,
    "gold_slots": {
     "text": "happy birthday"
    },
    "pred_slots": {},
-   "best_guess": "dictate"
+   "best_guess": "find_file"
   },
   {
    "text": "type in thanks for the help",
    "gold": "dictate",
    "pred": "dictate",
-   "confidence": 0.598,
+   "confidence": 0.474,
    "gold_slots": {
     "text": "thanks for the help"
    },
@@ -288,7 +301,7 @@
    "text": "Write: okay, see you.",
    "gold": "dictate",
    "pred": "out_of_scope",
-   "confidence": 0.176,
+   "confidence": 0.199,
    "gold_slots": {
     "text": "okay see you"
    },
@@ -298,21 +311,19 @@
   {
    "text": "dictate the following see you tomorrow",
    "gold": "dictate",
-   "pred": "dictate",
-   "confidence": 0.332,
+   "pred": "out_of_scope",
+   "confidence": 0.204,
    "gold_slots": {
     "text": "see you tomorrow"
    },
-   "pred_slots": {
-    "text": "the following see you tomorrow"
-   },
-   "best_guess": ""
+   "pred_slots": {},
+   "best_guess": "dictate"
   },
   {
    "text": "найди в интернете отзывы о ноутбуке",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.232,
+   "confidence": 0.186,
    "gold_slots": {
     "query": "отзывы о ноутбуке"
    },
@@ -323,29 +334,29 @@
    "text": "что такое градиентный спуск",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.251,
+   "confidence": 0.171,
    "gold_slots": {
     "query": "градиентный спуск"
    },
    "pred_slots": {},
-   "best_guess": "find_file"
+   "best_guess": "web_search"
   },
   {
    "text": "поищи в сети билеты в париж",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.177,
+   "confidence": 0.249,
    "gold_slots": {
     "query": "билеты в париж"
    },
    "pred_slots": {},
-   "best_guess": "find_file"
+   "best_guess": "web_search"
   },
   {
    "text": "кто такой алан тьюринг",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.206,
+   "confidence": 0.229,
    "gold_slots": {
     "query": "алан тьюринг"
    },
@@ -355,21 +366,19 @@
   {
    "text": "search the internet for laptop reviews",
    "gold": "web_search",
-   "pred": "web_search",
-   "confidence": 0.449,
+   "pred": "out_of_scope",
+   "confidence": 0.254,
    "gold_slots": {
     "query": "laptop reviews"
    },
-   "pred_slots": {
-    "query": "internet for laptop reviews"
-   },
-   "best_guess": ""
+   "pred_slots": {},
+   "best_guess": "web_search"
   },
   {
    "text": "what is gradient descent",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.145,
+   "confidence": 0.245,
    "gold_slots": {
     "query": "gradient descent"
    },
@@ -380,7 +389,7 @@
    "text": "who is alan turing",
    "gold": "web_search",
    "pred": "out_of_scope",
-   "confidence": 0.174,
+   "confidence": 0.236,
    "gold_slots": {
     "query": "alan turing"
    },
@@ -390,35 +399,26 @@
   {
    "text": "звук выше",
    "gold": "volume_up",
-   "pred": "volume_down",
-   "confidence": 0.422,
+   "pred": "out_of_scope",
+   "confidence": 0.335,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": ""
+   "best_guess": "volume_down"
   },
   {
    "text": "can you make it louder",
    "gold": "volume_up",
    "pred": "out_of_scope",
-   "confidence": 0.229,
+   "confidence": 0.242,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "volume_up"
   },
   {
-   "text": "убавь громкость пожалуйста",
-   "gold": "volume_down",
-   "pred": "volume_up",
-   "confidence": 0.417,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": ""
-  },
-  {
    "text": "слишком громко",
    "gold": "volume_down",
    "pred": "volume_up",
-   "confidence": 0.44,
+   "confidence": 0.536,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": ""
@@ -427,7 +427,7 @@
    "text": "it's too loud",
    "gold": "volume_down",
    "pred": "out_of_scope",
-   "confidence": 0.158,
+   "confidence": 0.259,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "volume_up"
@@ -436,16 +436,16 @@
    "text": "lower it a bit",
    "gold": "volume_down",
    "pred": "out_of_scope",
-   "confidence": 0.127,
+   "confidence": 0.18,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "web_search"
+   "best_guess": "volume_down"
   },
   {
    "text": "выруби звук",
    "gold": "mute",
    "pred": "out_of_scope",
-   "confidence": 0.193,
+   "confidence": 0.217,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "mute"
@@ -454,61 +454,34 @@
    "text": "убери звук",
    "gold": "mute",
    "pred": "out_of_scope",
-   "confidence": 0.222,
+   "confidence": 0.198,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "volume_up"
+   "best_guess": "mute"
   },
   {
    "text": "сделай без звука",
    "gold": "mute",
-   "pred": "volume_down",
-   "confidence": 0.308,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": ""
-  },
-  {
-   "text": "верни звук",
-   "gold": "mute",
    "pred": "out_of_scope",
-   "confidence": 0.165,
+   "confidence": 0.236,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "mute"
-  },
-  {
-   "text": "kill the sound",
-   "gold": "mute",
-   "pred": "out_of_scope",
-   "confidence": 0.281,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": "mute"
-  },
-  {
-   "text": "продолжи",
-   "gold": "media_play_pause",
-   "pred": "out_of_scope",
-   "confidence": 0.289,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": "media_play_pause"
   },
   {
    "text": "resume",
    "gold": "media_play_pause",
    "pred": "out_of_scope",
-   "confidence": 0.254,
+   "confidence": 0.284,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "mute"
+   "best_guess": "media_play_pause"
   },
   {
    "text": "continue playing",
    "gold": "media_play_pause",
    "pred": "out_of_scope",
-   "confidence": 0.174,
+   "confidence": 0.207,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "media_play_pause"
@@ -516,44 +489,44 @@
   {
    "text": "скипни",
    "gold": "media_next",
-   "pred": "out_of_scope",
-   "confidence": 0.164,
+   "pred": "screenshot",
+   "confidence": 0.425,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "screenshot"
+   "best_guess": ""
   },
   {
    "text": "сфотографируй экран",
    "gold": "screenshot",
    "pred": "out_of_scope",
-   "confidence": 0.154,
+   "confidence": 0.247,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "lock_screen"
+   "best_guess": "screenshot"
   },
   {
-   "text": "сколько на часах",
-   "gold": "tell_time",
-   "pred": "out_of_scope",
-   "confidence": 0.242,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": "tell_time"
-  },
-  {
-   "text": "неважно",
+   "text": "ой, ничего",
    "gold": "cancel",
    "pred": "out_of_scope",
-   "confidence": 0.17,
+   "confidence": 0.295,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "cancel"
   },
   {
+   "text": "неважно",
+   "gold": "cancel",
+   "pred": "out_of_scope",
+   "confidence": 0.201,
+   "gold_slots": {},
+   "pred_slots": {},
+   "best_guess": "agenda"
+  },
+  {
    "text": "forget about it",
    "gold": "cancel",
    "pred": "out_of_scope",
-   "confidence": 0.202,
+   "confidence": 0.243,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": "web_search"
@@ -562,16 +535,16 @@
    "text": "oops nothing",
    "gold": "cancel",
    "pred": "out_of_scope",
-   "confidence": 0.173,
+   "confidence": 0.24,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "cancel"
+   "best_guess": "open_app"
   },
   {
    "text": "давай игровой режим",
    "gold": "set_mode",
    "pred": "set_mode",
-   "confidence": 0.711,
+   "confidence": 0.852,
    "gold_slots": {
     "mode": "игровой"
    },
@@ -584,7 +557,7 @@
    "text": "переключи на обычный режим",
    "gold": "set_mode",
    "pred": "set_mode",
-   "confidence": 0.717,
+   "confidence": 0.805,
    "gold_slots": {
     "mode": "обычный"
    },
@@ -597,7 +570,7 @@
    "text": "у меня созвон, включи режим встречи",
    "gold": "set_mode",
    "pred": "set_mode",
-   "confidence": 0.463,
+   "confidence": 0.628,
    "gold_slots": {
     "mode": "встречи"
    },
@@ -610,7 +583,7 @@
    "text": "Enable gaming mode.",
    "gold": "set_mode",
    "pred": "set_mode",
-   "confidence": 0.716,
+   "confidence": 0.791,
    "gold_slots": {
     "mode": "gaming"
    },
@@ -623,7 +596,7 @@
    "text": "put it in meeting mode",
    "gold": "set_mode",
    "pred": "set_mode",
-   "confidence": 0.526,
+   "confidence": 0.791,
    "gold_slots": {
     "mode": "meeting"
    },
@@ -635,30 +608,28 @@
   {
    "text": "go back to normal",
    "gold": "set_mode",
-   "pred": "set_mode",
-   "confidence": 0.347,
+   "pred": "out_of_scope",
+   "confidence": 0.256,
    "gold_slots": {
     "mode": "normal"
    },
-   "pred_slots": {
-    "mode": "go back to normal"
-   },
-   "best_guess": ""
+   "pred_slots": {},
+   "best_guess": "web_search"
   },
   {
    "text": "расскажи расписание",
    "gold": "agenda",
    "pred": "out_of_scope",
-   "confidence": 0.132,
+   "confidence": 0.151,
    "gold_slots": {},
    "pred_slots": {},
-   "best_guess": "set_mode"
+   "best_guess": "web_search"
   },
   {
    "text": "спой песню",
    "gold": "out_of_scope",
    "pred": "media_next",
-   "confidence": 0.348,
+   "confidence": 0.465,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": ""
@@ -667,7 +638,7 @@
    "text": "открой окно в комнате",
    "gold": "out_of_scope",
    "pred": "open_app",
-   "confidence": 0.566,
+   "confidence": 0.58,
    "gold_slots": {},
    "pred_slots": {
     "app": "окно в комнате"
@@ -675,19 +646,10 @@
    "best_guess": ""
   },
   {
-   "text": "sing a song",
-   "gold": "out_of_scope",
-   "pred": "media_next",
-   "confidence": 0.306,
-   "gold_slots": {},
-   "pred_slots": {},
-   "best_guess": ""
-  },
-  {
    "text": "let's chat",
    "gold": "out_of_scope",
    "pred": "agenda",
-   "confidence": 0.371,
+   "confidence": 0.444,
    "gold_slots": {},
    "pred_slots": {},
    "best_guess": ""

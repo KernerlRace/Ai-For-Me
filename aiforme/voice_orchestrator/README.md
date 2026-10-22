@@ -32,7 +32,7 @@ its own; `python -m aiforme say "открой телеграм"` enters the chai
 `out_of_scope` for everything else: an explicit
 class with its own examples, plus a confidence threshold chosen by cross-validation on the training set.
 
-The data ([data/](data)) is hand-written, Russian and English: 289 training phrases and 170 test phrases written
+The data ([data/](data)) is hand-written, Russian and English: 314 training phrases and 170 test phrases written
 separately — other wording, Whisper-style capitals and punctuation, slang (*«телегу»*, *«скипни»*), apps the training
 data never names, and out-of-scope requests that look like commands (*«открой окно в комнате»*). Both sets were
 written by the same person during development, so the numbers are an optimistic estimate.
@@ -44,20 +44,20 @@ Held-out test set, 170 phrases ([evaluate.py](evaluate.py), `eval/results/intent
 | Metric | TF-IDF | Char-CNN | MiniLM | E5 |
 |---|---|---|---|---|
 | Built from | training data only | training data only, trained from scratch | pretrained | pretrained |
-| Intent accuracy, all test phrases | 84.1% | 71.2% | 80.6% | **92.4%** |
-| In-scope intent accuracy, Russian / English | 82.2% / 86.3% | 64.4% / 74.0% | 72.6% / 90.4% | **94.5% / 93.2%** |
-| Out-of-scope recall | **83.3%** | **83.3%** | 75.0% | **83.3%** |
-| Commands wrongly rejected as out-of-scope | 13.7% | 28.1% | 11.0% | **4.8%** |
-| Slot exactly right, end to end | 51.5% | 42.4% | 40.9% | **56.1%** |
-| Latency per command, CPU | 0.6 ms | 1.2 ms | 20 ms | 19 ms |
+| Intent accuracy, all test phrases | 85.9% | 72.4% | 79.4% | **92.4%** |
+| In-scope intent accuracy, Russian / English | 83.6% / 89.0% | 68.5% / 71.2% | 68.5% / 87.7% | **93.2% / 93.2%** |
+| Out-of-scope recall | 83.3% | **87.5%** | **87.5%** | **87.5%** |
+| Commands wrongly rejected as out-of-scope | 12.3% | 28.8% | 17.8% | **4.8%** |
+| Slot exactly right, end to end | 53.0% | 40.9% | 36.4% | **54.5%** |
+| Latency per command, CPU | 0.6 ms | 1.0 ms | 19 ms | 19 ms |
 
-<sub>TF-IDF: character 2–5-grams. Char-CNN: character embeddings, filters 2–5 wide, trained on the 289 phrases with
+<sub>TF-IDF: character 2–5-grams. Char-CNN: character embeddings, filters 2–5 wide, trained on the 314 phrases with
 simulated typos; one seed. MiniLM: `paraphrase-multilingual-MiniLM-L12-v2`. E5: `multilingual-e5-small`. The test set
 was scored once per model; nothing was tuned on it.</sub>
 
 - **E5 is the default.** It is the only one that is good in both languages; MiniLM, also multilingual, is far weaker
-  in Russian (72.6%).
-- **From scratch, the simple model wins.** With 289 phrases the char-CNN cannot learn what a pretrained encoder brings
+  in Russian (68.5%).
+- **From scratch, the simple model wins.** With 314 phrases the char-CNN cannot learn what a pretrained encoder brings
   and loses to TF-IDF, which needs no training at all — the same lesson as in
   [causal-method-advisor](https://github.com/KernerlRace/causal-method-advisor), where a model trained from scratch only
   beat the baseline after pretraining on Wikipedia.
@@ -128,8 +128,8 @@ Whisper `large-v3-turbo` on the GPU and classified with E5 ([spoken_eval.py](spo
 | Metric | On the written text | Through speech |
 |---|---|---|
 | Transcript identical after normalisation | — | 90.6% |
-| Intent accuracy, all test phrases | 92.4% | **90.6%** |
-| In-scope intent accuracy | 93.8% | 91.8% |
+| Intent accuracy, all test phrases | 92.4% | **90.0%** |
+| In-scope intent accuracy | 93.2% | 90.4% |
 
 Most transcript differences are harmless: brand names in Latin (*«Запусти Photoshop»*), digits for numbers. The costly
 ones are misheard words — *«скипни»* became *«Сгибни»* (→ mute), *"Write: okay"* became *"Right, okay"* (→ out of
@@ -137,12 +137,35 @@ scope). The slot metric is not shown: it compares strings, so *«телегра�
 wrong although both open the same app. Synthetic voices are clean and accent-free, so this is the cost of Whisper's
 errors alone, not of a real room; recordings of real speech are next.
 
+## From real use
+
+The first evenings of using it, read back from the bus log, showed failures no test set had: while a video played,
+commands were cut off mid-word (*«Сделай видео чуть-чуть поти…»*) or not heard at all, *«продолжи видео»* came out of
+Whisper as *«продолжу видео»* and was not understood, and *«закрой калькулятор»* reported success while the Calculator
+stayed open. What changed:
+
+- **The volume goes down while it listens.** After the wake word the master volume drops to 10% and comes back as
+  soon as the command is recorded — before it runs, so *«громче»* acts on the real level.
+- **The end of a command is heard by a speech model, not by loudness.** Loudness was measured against the room, and
+  the room was a loud video, so a voice next to it counted as silence. Silero VAD (shipped with faster-whisper) now
+  runs as a stream on 32 ms chunks and decides what is speech.
+- **Play and pause act on what is playing.** The media session API — the one behind the volume flyout — says
+  whether a video plays and in which app; *«пауза»* pauses it and says so when nothing plays, *«продолжи»* resumes,
+  instead of a play/pause key that toggles the wrong way half the time.
+- **Apps close through their windows, and failures are reported.** Store apps such as the Calculator draw their
+  window from another process, so ending theirs did nothing; the assistant now closes the window as its close
+  button does, checks that it went, and says *«не закрылось — возможно, просит сохранить изменения»* if it did not.
+- **Real phrasings went into training**, Whisper's mistakes included (*«продолжу видео»*): 25 phrases. On the
+  written test set they change nothing measurable — 92.4% before and after — because it has no phrases like them.
+  That is the case for a test set made of real commands, which is where Phase 3 starts.
+
 ## Running it
 
 ```bash
 uv sync --all-extras
 uv run python -m aiforme run                  # «Амадеус», then a command
 uv run python -m aiforme run --push-to-talk   # Enter instead of the wake word
+uv run python -m aiforme run --no-duck        # keep the volume while listening
 uv run python -m aiforme run --no-voice       # no microphone; then, in another terminal:
 uv run python -m aiforme say "сколько времени"
 ```

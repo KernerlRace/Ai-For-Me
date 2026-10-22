@@ -4,10 +4,10 @@
  "phrases": 170,
  "transcript_exact": 0.9059,
  "intent_accuracy_on_text": 0.9235,
- "intent_accuracy_on_speech": 0.9059,
- "in_scope_on_text": 0.9384,
- "in_scope_on_speech": 0.9178,
- "slot_end_to_end_on_speech": 0.4697,
+ "intent_accuracy_on_speech": 0.9,
+ "in_scope_on_text": 0.9315,
+ "in_scope_on_speech": 0.9041,
+ "slot_end_to_end_on_speech": 0.4545,
  "rows": [
   {
    "text": "Открой Telegram.",
@@ -37,10 +37,10 @@
    "language": "ru",
    "gold": "open_app",
    "transcript_exact": true,
-   "intent_on_text": true,
-   "intent_on_speech": true,
-   "pred_on_speech": "open_app",
-   "slot_on_speech": true
+   "intent_on_text": false,
+   "intent_on_speech": false,
+   "pred_on_speech": "media_play_pause",
+   "slot_on_speech": false
   },
   {
    "text": "а можешь запустить стим",
@@ -71,8 +71,8 @@
    "gold": "open_app",
    "transcript_exact": false,
    "intent_on_text": true,
-   "intent_on_speech": true,
-   "pred_on_speech": "open_app",
+   "intent_on_speech": false,
+   "pred_on_speech": "out_of_scope",
    "slot_on_speech": false
   },
   {
@@ -1742,9 +1742,9 @@
    "language": "ru",
    "gold": "out_of_scope",
    "transcript_exact": true,
-   "intent_on_text": false,
-   "intent_on_speech": false,
-   "pred_on_speech": "dictate",
+   "intent_on_text": true,
+   "intent_on_speech": true,
+   "pred_on_speech": "out_of_scope",
    "slot_on_speech": null
   },
   {

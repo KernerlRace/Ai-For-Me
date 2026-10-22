@@ -257,6 +257,28 @@
 {"text": "show my schedule", "intent": "agenda"}
 {"text": "what's my agenda", "intent": "agenda"}
 {"text": "what's next on my calendar", "intent": "agenda"}
+{"text": "поставь паузу на видео", "intent": "media_play_pause"}
+{"text": "останови видео", "intent": "media_play_pause"}
+{"text": "стоп видео", "intent": "media_play_pause"}
+{"text": "включи видео", "intent": "media_play_pause"}
+{"text": "продолжи видео", "intent": "media_play_pause"}
+{"text": "продолжу видео", "intent": "media_play_pause"}
+{"text": "видео на паузу", "intent": "media_play_pause"}
+{"text": "запусти видео дальше", "intent": "media_play_pause"}
+{"text": "паузу", "intent": "media_play_pause"}
+{"text": "pause the video", "intent": "media_play_pause"}
+{"text": "stop the video", "intent": "media_play_pause"}
+{"text": "resume the video", "intent": "media_play_pause"}
+{"text": "play the video", "intent": "media_play_pause"}
+{"text": "сделай видео потише", "intent": "volume_down"}
+{"text": "видео потише", "intent": "volume_down"}
+{"text": "убавь видео", "intent": "volume_down"}
+{"text": "сделай видео погромче", "intent": "volume_up"}
+{"text": "видео громче", "intent": "volume_up"}
+{"text": "turn the video down", "intent": "volume_down"}
+{"text": "turn the video up", "intent": "volume_up"}
+{"text": "выключи звук на видео", "intent": "mute"}
+{"text": "закрой калькулятор пожалуйста", "intent": "close_app", "slots": {"app": "калькулятор"}}
 {"text": "закажи пиццу", "intent": "out_of_scope"}
 {"text": "поставь будильник на семь", "intent": "out_of_scope"}
 {"text": "расскажи анекдот", "intent": "out_of_scope"}
@@ -287,3 +309,6 @@
 {"text": "remind me to buy milk", "intent": "out_of_scope"}
 {"text": "translate cat to spanish", "intent": "out_of_scope"}
 {"text": "i'm bored", "intent": "out_of_scope"}
+{"text": "сделай мне бутерброд", "intent": "out_of_scope"}
+{"text": "ты глупая", "intent": "out_of_scope"}
+{"text": "do you hear me", "intent": "out_of_scope"}

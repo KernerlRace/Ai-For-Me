@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     start.add_argument("--no-voice", action="store_true", help="no microphone, typed commands only")
     start.add_argument("--push-to-talk", action="store_true", help="Enter instead of the wake word")
     start.add_argument("--no-speak", action="store_true", help="print replies without speaking them")
+    start.add_argument("--no-duck", action="store_true", help="do not turn the volume down while listening")
     start.add_argument("--stt-device", default="auto", choices=("auto", "cuda", "cpu"))
     start.add_argument("--input-device", default=None, help="microphone index or name (sounddevice)")
     commands.add_parser("dashboard", help="run only the web UI")
@@ -150,7 +151,7 @@ def _dashboard() -> int:
 
 
 def _listen(args, stop: threading.Event) -> None:
-    from aiforme.voice_orchestrator.listener import EnterKey, Listener, WhisperSTT
+    from aiforme.voice_orchestrator.listener import EnterKey, Listener, SileroVAD, WhisperSTT
     from aiforme.wakeword.detector import Detector
 
     print("Loading Whisper...", flush=True)
@@ -158,8 +159,16 @@ def _listen(args, stop: threading.Event) -> None:
     print(f"Whisper {stt.model_name} on {stt.device}.", flush=True)
     wake = EnterKey() if args.push_to_talk else Detector()
     device = int(args.input_device) if (args.input_device or "").isdigit() else args.input_device
+    vad = SileroVAD()
+    ducker = None
+    if not args.no_duck:
+        try:
+            from aiforme.voice_orchestrator.media import VolumeDucker
+            ducker = VolumeDucker()
+        except Exception as exc:                    # no audio device or no pycaw: listen without ducking
+            print(f"Volume ducking off: {exc}", file=sys.stderr)
     with EventBus(bus_path()) as bus:
-        Listener(bus, wake, stt, input_device=device).run(stop)
+        Listener(bus, wake, stt, input_device=device, vad=vad, ducker=ducker).run(stop)
 
 
 if __name__ == "__main__":
