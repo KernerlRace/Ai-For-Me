@@ -1,7 +1,7 @@
 """Microphone → wake word → one command → text on the bus.
 
 The microphone is read in 80 ms frames. While idle, every frame goes to the wake-word detector (our own
-CNN for «Джарвис», aiforme/wakeword) and updates the background noise level. After the wake word the frames
+CNN for «Амадеус», aiforme/wakeword) and updates the background noise level. After the wake word the frames
 are recorded until the speaker stops — loudness falls back to the noise level for `silence_s` — and the
 recording goes to Whisper. The result is published as `voice.transcribed`; the intent module takes it from
 there. With `--push-to-talk` the Enter key replaces the wake word.
@@ -168,7 +168,7 @@ class Listener:
 
         with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", blocksize=FRAME,
                             device=self.input_device, callback=callback):
-            print("Listening. Say «Джарвис» and a command; Ctrl+C to stop.", flush=True)
+            print("Listening. Say «Амадеус» and a command; Ctrl+C to stop.", flush=True)
             self.loop(frames, stop)
 
     def loop(self, frames: queue.Queue, stop: threading.Event) -> None:

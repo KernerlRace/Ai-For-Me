@@ -1,4 +1,4 @@
-"""The trained wake-word model at run time: ONNX Runtime on a sliding 1.2 s window, no PyTorch.
+"""The trained wake-word model at run time: ONNX Runtime on a sliding 1.5 s window, no PyTorch.
 
 Every 80 ms microphone frame moves the window; the detector fires when the probability stays above the
 threshold for `consecutive` windows in a row, then ignores the next `refractory_s` seconds so one word does

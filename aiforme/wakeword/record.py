@@ -1,6 +1,6 @@
 """Recording the wake-word data with your own microphone.
 
-    python -m aiforme.wakeword.record positive --n 200            # «Джарвис», in different ways
+    python -m aiforme.wakeword.record positive --n 200            # «Амадеус», in different ways
     python -m aiforme.wakeword.record negative --n 100            # other phrases, including similar words
     python -m aiforme.wakeword.record ambient --minutes 10         # the room as it is: talk, music, video
     ... --split test                                              # a separate session for the evaluation
@@ -26,12 +26,13 @@ from aiforme.wakeword.features import SAMPLE_RATE
 # how to say it, changing every 10 takes: one voice said the same way 200 times generalises badly
 STYLES = [
     "обычно", "тихо, почти шёпотом", "громко, как будто из другой комнаты", "быстро", "медленно, растягивая",
-    "с вопросительной интонацией: «Джарвис?»", "отойдите на 1–2 метра от микрофона", "устало или лениво",
-    "сразу с командой: «Джарвис, открой браузер» — любую команду", "отвернувшись от микрофона",
+    "с вопросительной интонацией: «Амадеус?»", "отойдите на 1–2 метра от микрофона", "устало или лениво",
+    "сразу с командой: «Амадеус, открой браузер» — любую команду", "отвернувшись от микрофона",
 ]
 # words that sound close to the wake word: the model must learn they are not it
-CONFUSABLES = ["Джордж", "Дарвин", "Марвин", "Джаз", "Джастин", "Чарльз", "Джерси", "жарко", "Харви",
-               "Джарвиса нет", "Ярославль", "Джа", "Жар-птица", "Jarvis Cocker", "Charles", "Darwin", "Marvin"]
+CONFUSABLES = ["Амадей", "Моцарт Амадей", "Асмодей", "Мадейра", "Мадрид", "мадам", "Медуза", "Адам",
+               "Амадина", "а мы же дома", "Ама", "Амадеуса нет", "Amadeo", "Amanda", "Madeira", "Medusa",
+               "Asmodeus", "Matthew"]
 
 
 def save(path: Path, audio: np.ndarray) -> None:

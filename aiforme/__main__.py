@@ -1,7 +1,7 @@
 """Command line.
 
     python -m aiforme run                       # the voice assistant: wake word, speech, actions
-    python -m aiforme run --push-to-talk        # Enter instead of «Джарвис»
+    python -m aiforme run --push-to-talk        # Enter instead of «Амадеус»
     python -m aiforme run --no-voice            # no microphone; send commands with `say`
     python -m aiforme say "открой телеграм"     # a typed command, as if it was spoken
     python -m aiforme publish voice.transcribed '{"text": "open the terminal"}'

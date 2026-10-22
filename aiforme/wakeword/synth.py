@@ -18,10 +18,10 @@ from aiforme.core.config import data_dir
 from aiforme.voice_orchestrator.nlu import TRAIN, language, load_examples
 from aiforme.wakeword.record import CONFUSABLES
 
-VOICES = {"Microsoft Irina Desktop": ("ru-RU", "Джарвис"),
-          "Microsoft Zira Desktop": ("en-US", "Jarvis"),
-          "Microsoft Hazel Desktop": ("en-GB", "Jarvis")}
-# x-slow and x-fast are far outside human tempo (2.8 s and 0.3 s for «Джарвис»)
+VOICES = {"Microsoft Irina Desktop": ("ru-RU", "Амадеус"),
+          "Microsoft Zira Desktop": ("en-US", "Amadeus"),
+          "Microsoft Hazel Desktop": ("en-GB", "Amadeus")}
+# x-slow and x-fast are far outside human tempo (2.8 s and 0.3 s for a two-syllable word)
 RATES = ["slow", "medium", "fast"]
 PITCHES = ["x-low", "low", "medium", "high", "x-high"]
 

@@ -1,3 +1,3 @@
-"""Own wake-word detector for «Джарвис»: a small CNN on log-mel features, trained from scratch."""
+"""Own wake-word detector for «Амадеус»: a small CNN on log-mel features, trained from scratch."""
 
-WAKE_WORD = "Джарвис"
+WAKE_WORD = "Амадеус"   # the AI in Steins;Gate 0

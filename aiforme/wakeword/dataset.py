@@ -1,7 +1,7 @@
-"""From recordings to training windows: where the word is, which 1.2 s windows hold it, and augmentation.
+"""From recordings to training windows: where the word is, which 1.5 s windows hold it, and augmentation.
 
 A positive window holds the whole wake word somewhere inside it. Windows that end halfway through the
-word ("Джар...") are negatives on purpose: without them the detector fires before the word is finished,
+word ("Ама...") are negatives on purpose: without them the detector fires before the word is finished,
 and on every word that merely starts the same way. Negative windows are cut at random from the other
 phrases and from the room recordings, which also serve as background noise for mixing.
 """
@@ -49,12 +49,12 @@ def speech_span(audio: np.ndarray, frame: int = 160) -> tuple[int, int] | None:
 
 def word_span(audio: np.ndarray) -> tuple[int, int] | None:
     """Where the wake word is. Alone, it is the whole speech; before a command it is the first burst of
-    speech, which ends at the first pause of at least 120 ms or, failing that, 0.9 s after the start."""
+    speech, which ends at the first pause of at least 120 ms or, failing that, 1.0 s after the start."""
     span = speech_span(audio)
     if span is None:
         return None
     start, end = span
-    if end - start <= int(1.0 * SAMPLE_RATE):
+    if end - start <= int(1.45 * SAMPLE_RATE):    # a slow «Амадеус» alone is up to 1.4 s
         return span
     frame = 160
     seg = audio[start:end]
@@ -62,11 +62,11 @@ def word_span(audio: np.ndarray) -> tuple[int, int] | None:
     level = 10 * np.log10((seg[: n * frame].reshape(n, frame) ** 2).mean(axis=1) + 1e-10)
     quiet = level < np.percentile(level, 90) - 20
     run = 0
-    for i in range(int(0.25 * SAMPLE_RATE / frame), min(n, int(1.2 * SAMPLE_RATE / frame))):
+    for i in range(int(0.25 * SAMPLE_RATE / frame), min(n, int(1.5 * SAMPLE_RATE / frame))):
         run = run + 1 if quiet[i] else 0
         if run >= 12:
             return start, start + (i - run + 1) * frame
-    return start, start + int(0.9 * SAMPLE_RATE)
+    return start, start + int(1.0 * SAMPLE_RATE)
 
 
 # --- augmentation ---------------------------------------------------------------------------------------
