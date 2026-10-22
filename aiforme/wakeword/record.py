@@ -31,9 +31,9 @@ STYLES = [
     "сразу с командой: «Амадеус, открой браузер» — любую команду", "отвернувшись от микрофона",
 ]
 # words that sound close to the wake word: the model must learn they are not it
+# (not the word itself in another form: «Амадеуса нет» and "Asmodeus" were here once and taught it to ignore itself)
 CONFUSABLES = ["Амадей", "Моцарт Амадей", "Асмодей", "Мадейра", "Мадрид", "мадам", "Медуза", "Адам",
-               "Амадина", "а мы же дома", "Ама", "Амадеуса нет", "Amadeo", "Amanda", "Madeira", "Medusa",
-               "Asmodeus", "Matthew"]
+               "Амадина", "а мы же дома", "Ама", "Amadeo", "Amanda", "Madeira", "Medusa", "Matthew"]
 
 
 def save(path: Path, audio: np.ndarray) -> None:
@@ -97,7 +97,10 @@ def takes(kind: str, n: int, split: str, device, speaker: str) -> None:
         if not loud_enough(audio):
             print("   Ничего не слышно — повторим это же задание.\n")
             continue
-        save(out / f"{speaker}_{stamp}_{i:03d}.wav", audio)
+        name = f"{speaker}_{stamp}_{i:03d}.wav"
+        save(out / name, audio)
+        with open(out / "prompts.tsv", "a", encoding="utf-8") as log:     # what was asked for, per file
+            log.write(f"{name}\t{prompt}\n")
         i += 1
         print("   ✓ сохранено\n")
     print(f"Готово: {n} записей в {out}")
@@ -108,9 +111,11 @@ def ambient(minutes: float, split: str, device, speaker: str) -> None:
     out = data_dir() / "wakeword" / "ambient" / split
     stamp = time.strftime("%Y%m%d-%H%M%S")
     total = int(np.ceil(minutes))
-    print(f"\nЗапись фона уже идёт, нажимать ничего не нужно. Длится {minutes:g} мин: каждую минуту появится "
-          f"строчка с прогрессом, в конце — «Готово».\nЗанимайтесь своими делами — хорошо, если играет видео, "
-          f"подкаст или идёт разговор. Только не говорите «{WAKE_WORD}». Ctrl+C — остановить раньше.\n")
+    ends = time.strftime("%H:%M", time.localtime(time.time() + minutes * 60))
+    print(f"\nЗапись фона уже идёт, нажимать ничего не нужно. Длится {minutes:g} мин, закончится около {ends}: "
+          f"каждую минуту появится строчка с прогрессом, в конце — «Готово».\nЗанимайтесь своими делами — хорошо, "
+          f"если играет видео, подкаст или идёт разговор. Только не говорите «{WAKE_WORD}».\n"
+          f"Ctrl+C — остановить раньше: сохранятся все полные минуты.\n")
     for m in range(total):
         save(out / f"{speaker}_{stamp}_{m:02d}.wav", record(min(60.0, (minutes - m) * 60), device))
         print(f"   записано {m + 1} из {total} мин", flush=True)

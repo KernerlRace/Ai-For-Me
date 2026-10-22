@@ -20,7 +20,7 @@ its own; `python -m aiforme say "открой телеграм"` enters the chai
 
 | Part | Approach | Why |
 |---|---|---|
-| Wake word | Own CNN on log-mel features, 60k parameters, trained on my recordings and Windows voices ([aiforme/wakeword](../wakeword)) | A small, well-defined task: a model trained from scratch is enough, and pre-trained wake-word models are licensed for non-commercial use only |
+| Wake word | Own CNN on log-mel features, 60k parameters, trained on my recordings, my room and Windows voices, with hard-negative mining ([aiforme/wakeword](../wakeword)) | A small, well-defined task: a model trained from scratch is enough, and pre-trained wake-word models are licensed for non-commercial use only |
 | Speech to text | [faster-whisper](https://github.com/SYSTRAN/faster-whisper), `large-v3-turbo`, on the GPU | Whisper learned from 680,000 hours of audio. An ASR model trained on one GPU and an open corpus of a few hundred hours would misrecognise every third word or worse, and dictation and web search need open vocabulary, not a fixed command list |
 | Intent | Text embedding + logistic regression; four embeddings compared below, two of them built only from the training commands | The comparison shows what pretraining buys on 255 examples |
 | Slots | Carrier phrases learned from the training data ("open my …"), then fuzzy matching of app names | A baseline to beat with a sequence tagger once there is more data (Phase 3) |
@@ -68,38 +68,49 @@ was scored once per model; nothing was tuned on it.</sub>
 
 «Амадеус» — the AI in Steins;Gate 0. The detector is a 60k-parameter CNN over 1.5 s of log-mel features, trained from
 scratch ([aiforme/wakeword](../wakeword)) on 200 recordings of my voice saying it in ten different ways (quiet, from two
-metres, followed by a command, ...), 100 recordings of other phrases and similar-sounding words (*Амадей, Асмодей,
-Мадейра*), 10 minutes of my room with a video playing, and 105 + 544 clips from the Windows voices. Every clip is
-augmented: tempo ±10%, a synthetic room, gain, noise from the room recording at 3–30 dB SNR. Windows that end inside
-the word (*«Ама…»*) are negatives, so it waits for the whole word.
+metres, followed by a command, ...), 97 recordings of other phrases and similar-sounding words (*Амадей, Асмодей,
+Мадейра*), 70 minutes of my room — videos, games, talk, coughs — and 105 + 526 clips from the Windows voices. Every clip
+is augmented: tempo ±10%, a synthetic room, gain, noise from the room recordings at 3–30 dB SNR. Windows that end inside
+the word (*«Ама…»*) are negatives, so it waits for the whole word. Training runs in two rounds: the first model is
+streamed over the 60 training minutes of room audio, the ~900 windows it mistakes for the word become hard negatives,
+and a second model is trained from scratch with them. On an RTX 3060 Ti both rounds take three minutes.
 
-Scored by streaming 15% of the recordings, held out by file before training, through the exported ONNX model exactly
-as the assistant runs it (`eval/results/wakeword*.json`):
+Everything is scored by streaming audio through the exported ONNX model exactly as the assistant runs it
+(`eval/results/wakeword*.json`): validation is 15% of the training recordings, held out by file; the test is a separate
+session recorded on another day — 50 takes and 10 minutes of a different video playing.
 
-| Trained on | Windows voices only | Windows voices + my recordings |
+| | v1: 10 min of room audio | v3: 70 min + hard negatives |
 |---|---|---|
-| Wake words found, 30 held-out takes | 26 (86.7%) | **29 (96.7%)** |
-| False accepts, 2 minutes of held-out room audio | 13 (≈390 an hour) | **0** |
+| Validation: wake words found, 30 takes | 29 (96.7%) | **30 (100%)** |
+| Validation: false accepts, 10 min of held-out room audio | 6 (≈36 an hour) | **0** |
+| Test: wake words found, 50 takes | 42 (84%) | **45 (90%)** |
+| Test: false accepts, 10 min | 2 (≈12 an hour) | **0** |
+| Threshold | 0.977 | 0.97 |
 
-Synthetic voices alone give a detector that would fire every ten seconds; real recordings of the voice and the room
-are what make it usable.
+<sub>Validation for both models uses the same held-out takes and only room audio from the sessions recorded after v1,
+which neither model trained on. The v1 test result was looked at — its errors are what motivated recording more room
+audio and mining it — but nothing was tuned on the test audio itself.</sub>
 
-**Test session.** A separate session recorded later — 50 takes and 10 minutes of another video playing — scored once,
-with nothing changed after seeing it:
+What changed, and what each step bought:
 
-| | Validation (held-out takes from training sessions) | Test (separate session) |
-|---|---|---|
-| Wake words found | 29 / 30 (96.7%) | **42 / 50 (84%)** |
-| False accepts | 0 in 2 minutes | **2 in 10 minutes (≈12 an hour)** |
+- **Synthetic voices alone are useless.** Trained on the Windows voices only, the detector found 26 of 30 validation
+  takes but fired 13 times in 2 minutes of room audio. My own recordings made it usable.
+- **More room audio and hard negatives** removed the false accepts: v1 fired on a fragment of conversation and on a
+  cough. Mining shows in the threshold — after round 1, silencing the validation room audio took 0.999; after
+  round 2, 0.97, which gave back the recall.
+- **A labelling bug of my own.** The list of similar-sounding negatives contained *«Амадеуса нет»* — the wake word
+  itself. Whisper found three such recordings among the negatives (the other two were *"Asmodeus"*, which comes out
+  as *"Amadeus"*); they were moved out and the phrases removed from the list. The recorder now logs the prompt behind
+  every file.
+- **The threshold comes from real audio.** The Windows voices' *«Амадей»* and *"Amadeo"* score higher than anything
+  the microphone hears, and holding the threshold above them cost real recall for no fewer false accepts in the room.
+  The threshold is now the lowest at which the held-out room audio and my recorded phrases never fire; 2 of 79
+  synthetic phrases fire at it, reported rather than obeyed.
 
-All eight misses are the whispered takes; every other way of saying it — normal, loud, fast, slow, from two metres,
-turned away — was found 42 of 42 times. The whispers scored 0.58–0.96, under a threshold of 0.977. The threshold is
-that high because it is set just above the highest-scoring negative in validation, and even so two sounds passed it:
-a fragment of conversation (*«А? Не знаю. Это те, которые…»*) and a cough. Twelve false accepts an hour is too many to
-leave it listening all day; good wake-word detectors stay under one. Both failures point the same way — far more
-real negative audio (hours, not ten minutes, including coughs and laughter), mined for the windows the model scores
-highest, and a fresh test session to measure the result. In the first live session it woke on every «Амадеус» and
-carried out the commands, Whisper taking 0.6–0.8 s per command once warm.
+Limits. All five test misses are whispered — 5 of 10 whispers found, 40 of 40 of everything else. Zero false accepts
+in 20 minutes of held-out audio says the rate is probably below about 9 an hour (the rule of three), not that it is
+below one; that needs hours of test audio. And it has only heard one voice — a second speaker's test session is next.
+In live use it woke on «Амадеус» and carried out the commands, Whisper taking 0.6–0.8 s per command once warm.
 
 One finding on the way: the microphone suppresses noise, so its silence is near digital zero. Thresholds measured
 from the noise floor then counted breath, key clicks and the beep's echo as speech — the word boundaries in the

@@ -4,7 +4,10 @@
     python -m aiforme.wakeword.train --no-recorded    # Windows voices only, for comparison
 
 Training data: the synthetic clips and the `train` recordings, split by file into fit (85%) and validation
-(15%). The threshold is the lowest one at which no validation negative window fires, but at least 0.5.
+(15%). Two rounds: the first model is run over the training room audio, the windows it mistakes for the wake word
+are added as hard negatives, and a second model is trained from scratch on everything. The threshold is the
+lowest at which the held-out real audio — room recordings and my other phrases, streamed as the detector hears
+them — never fires; how often the synthetic phrases fire at it is reported alongside. Trains on the GPU if any.
 The `test` recordings — another session — are never touched until the end, and are scored by streaming
 them through the exported model exactly as the assistant does: recall over the test takes of the wake word,
 false accepts per hour over the test room recording.
@@ -17,9 +20,10 @@ import time
 
 import numpy as np
 
-from aiforme.wakeword.dataset import build, files, read_wav, speaker_of
-from aiforme.wakeword.detector import CONFIG, MODEL, Detector
-from aiforme.wakeword.features import FRAMES, N_MELS, SAMPLE_RATE
+from aiforme.wakeword.dataset import Augmenter, build, files, read_wav, speaker_of
+from aiforme.wakeword.dataset import _fit as _fit_len
+from aiforme.wakeword.detector import CONFIG, HOP, MODEL, Detector
+from aiforme.wakeword.features import FRAMES, N_MELS, SAMPLE_RATE, WINDOW, log_mel
 
 RESULTS = MODEL.parents[1] / "eval" / "results"
 
@@ -76,71 +80,52 @@ def coloured_noise(rng: np.random.Generator, seconds: float = 30.0) -> list[np.n
     return [white / np.abs(white).max(), pink / np.abs(pink).max()]
 
 
-def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
+def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = True) -> dict:
     import torch
-    import torch.nn as nn
 
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    clips_fit, clips_val, recorded_val = {}, {}, {}
+    clips_fit, synth_val, recorded_val = {}, {}, {}
     for kind in ("positive", "negative", "ambient"):
         # synthetic and recorded clips are split separately, so validation has its share of each
         fit_s, val_s = split_files(load(kind, "train", synth=kind != "ambient", recorded=False), 0.15, rng)
         # recordings are always split the same way, so a synthetic-only model is scored on the same takes
         fit_r, val_r = split_files(load(kind, "train", synth=False, recorded=True), 0.15, rng)
         if not recorded:
-            fit_r, val_used = [], []
-        else:
-            val_used = val_r
-        clips_fit[kind], clips_val[kind], recorded_val[kind] = fit_s + fit_r, val_s + val_used, val_r
+            fit_r = []
+        clips_fit[kind], synth_val[kind], recorded_val[kind] = fit_s + fit_r, val_s, val_r
     noise = clips_fit["ambient"] + coloured_noise(rng)
+    ambient_s = sum(len(a) for a in clips_fit["ambient"]) / SAMPLE_RATE
     t0 = time.perf_counter()
-    X, y = build(clips_fit, noise, seed=seed)
-    Xv, yv = build(clips_val, noise, seed=seed + 1, ambient_windows=800)
-    print(f"windows: fit {len(y)} ({int(y.sum())} positive), val {len(yv)} ({int(yv.sum())} positive), "
-          f"{time.perf_counter() - t0:.0f} s", flush=True)
+    X, y = build(clips_fit, noise, seed=seed, ambient_windows=int(min(12000, max(2000, ambient_s * 3))))
+    print(f"windows: {len(y)} ({int(y.sum())} positive), {time.perf_counter() - t0:.0f} s", flush=True)
 
-    mean, std = X.mean(axis=(0, 2)), X.std(axis=(0, 2)) + 1e-5
-    norm = lambda a: (a - mean[None, :, None]) / std[None, :, None]  # noqa: E731
-    Xt, yt = torch.tensor(norm(X))[:, None], torch.tensor(y)
-    Xvt = torch.tensor(norm(Xv))[:, None]
+    rounds = []
+    model, mean, std = _fit(X, y, epochs, seed)
+    rounds.append(_validate(model, mean, std, synth_val, recorded_val, "round 1"))
+    if mine and clips_fit["ambient"]:
+        # hard negatives: the windows of the training room audio that the first model mistakes for the word
+        hard = _mine(model, mean, std, clips_fit["ambient"], Augmenter(noise, rng))
+        print(f"hard negatives: {len(hard)} windows", flush=True)
+        X = np.concatenate([X, hard])
+        y = np.concatenate([y, np.zeros(len(hard), np.float32)])
+        model, mean, std = _fit(X, y, epochs, seed)                # from scratch, with the hard negatives
+        rounds.append(_validate(model, mean, std, synth_val, recorded_val, "round 2"))
+        rounds[-1]["hard_negatives"] = len(hard)
+    final = rounds[-1]
 
-    model = make_model()
-    opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-3)
-    steps = epochs * int(np.ceil(len(yt) / 256))
-    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=3e-3, total_steps=steps)
-    loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor((len(y) - y.sum()) / max(y.sum(), 1)))
-    for epoch in range(epochs):
-        model.train()
-        perm = torch.randperm(len(yt))
-        total = 0.0
-        for i in range(0, len(perm), 256):
-            b = perm[i:i + 256]
-            xb = _spec_augment(Xt[b].clone())
-            loss = loss_fn(model(xb).squeeze(1), yt[b])
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            sched.step()
-            total += loss.item() * len(b)
-        pv = _predict(model, Xvt)
-        print(f"epoch {epoch + 1:2d}  loss {total / len(yt):.4f}  val recall@0.5 {np.mean(pv[yv == 1] >= .5):.3f}"
-              f"  val false@0.5 {np.mean(pv[yv == 0] >= .5):.4f}", flush=True)
-
-    pv = _predict(model, Xvt)
-    threshold = float(max(0.5, min(0.99, np.max(pv[yv == 0]) + 0.01)))
     model_path = MODEL if recorded else MODEL.with_name("wakeword_synth_only.onnx")
     config_path = CONFIG if recorded else CONFIG.with_name("wakeword_synth_only.json")
     MODEL.parent.mkdir(exist_ok=True)
-    wrapped = Normalized(model.eval(), mean.astype(np.float32), std.astype(np.float32))
+    wrapped = Normalized(model.cpu().eval(), mean.astype(np.float32), std.astype(np.float32))
     torch.onnx.export(wrapped, torch.zeros(1, 1, N_MELS, FRAMES), str(model_path), input_names=["features"],
                       output_names=["logit"], dynamic_axes={"features": {0: "batch"}}, dynamo=False)
-    config = {"threshold": threshold, "consecutive": 2, "refractory_s": 1.5, "trained_on_recordings": recorded,
-              "parameters": sum(p.numel() for p in model.parameters()), "epochs": epochs}
+    config = {"threshold": final["threshold"], "consecutive": CONSECUTIVE, "refractory_s": REFRACTORY_S,
+              "trained_on_recordings": recorded, "parameters": sum(p.numel() for p in model.parameters()),
+              "epochs": epochs, "fit_windows": len(y), "fit_ambient_minutes": round(ambient_s / 60, 1)}
     config_path.write_text(json.dumps(config, indent=1), encoding="utf-8")
 
-    report = {**config, "fit_windows": len(y), "val_windows": len(yv),
-              "val_recall_at_threshold": float(np.mean(pv[yv == 1] >= threshold)),
+    report = {**config, "rounds": rounds,
               "val_streaming": streaming(Detector(model_path, config_path), recorded_val["positive"],
                                          recorded_val["ambient"]),
               "test": evaluate_test(model_path, config_path)}
@@ -149,6 +134,126 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0) -> dict:
     (RESULTS / f"{name}.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     print(json.dumps(report, indent=1))
     return report
+
+
+CONSECUTIVE = 2
+REFRACTORY_S = 1.5
+THRESHOLDS = np.unique(np.round(np.concatenate([np.arange(0.5, 0.99, 0.01), np.arange(0.99, 0.9995, 0.001)]), 4))
+
+
+def _fit(X: np.ndarray, y: np.ndarray, epochs: int, seed: int):
+    import torch
+    import torch.nn as nn
+
+    torch.manual_seed(seed)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    mean, std = X.mean(axis=(0, 2)), X.std(axis=(0, 2)) + 1e-5
+    Xt = torch.tensor((X - mean[None, :, None]) / std[None, :, None])[:, None].to(device)
+    yt = torch.tensor(y).to(device)
+    model = make_model().to(device)
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-3)
+    steps = epochs * int(np.ceil(len(yt) / 256))
+    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=3e-3, total_steps=steps)
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor((len(y) - y.sum()) / max(y.sum(), 1), device=device))
+    for epoch in range(epochs):
+        model.train()
+        perm = torch.randperm(len(yt), device=device)
+        total = 0.0
+        for i in range(0, len(perm), 256):
+            b = perm[i:i + 256]
+            loss = loss_fn(model(_spec_augment(Xt[b].clone())).squeeze(1), yt[b])
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            sched.step()
+            total += loss.item() * len(b)
+        if (epoch + 1) % 5 == 0:
+            print(f"  epoch {epoch + 1:2d}  loss {total / len(yt):.4f}", flush=True)
+    return model.eval(), mean, std
+
+
+def stream_probs(model, mean, std, audio: np.ndarray) -> np.ndarray:
+    """The probability the detector computes after each 80 ms frame of `audio`, from a zero-filled buffer.
+    The log-mel of the whole recording is computed once and sliced: a window starts every 8 frames of
+    10 ms, so each slice equals the features of that window."""
+    import torch
+    padded = np.concatenate([np.zeros(WINDOW - HOP, np.float32), audio.astype(np.float32)])
+    feats = (log_mel(padded) - mean[:, None]) / std[:, None]
+    step = HOP // 160
+    n = 1 + (feats.shape[1] - FRAMES) // step
+    out = []
+    with torch.no_grad():
+        for i in range(0, n, 2048):
+            idx = range(i, min(n, i + 2048))
+            batch = np.stack([feats[:, k * step:k * step + FRAMES] for k in idx])[:, None]
+            x = torch.tensor(batch.astype(np.float32)).to(_device(model))
+            out.append(torch.sigmoid(model(x)).squeeze(1).cpu().numpy())
+    return np.concatenate(out) if out else np.zeros(0)
+
+
+def _device(model):
+    params = list(model.parameters())
+    return params[0].device if params else "cpu"
+
+
+def count_hits(probs: np.ndarray, threshold: float, refractory_s: float = REFRACTORY_S) -> int:
+    """The detector's decision rule (detector.py) applied to a precomputed probability sequence."""
+    refractory = int(refractory_s * SAMPLE_RATE / HOP)
+    above = cooldown = hits = 0
+    for p in probs:
+        if cooldown:
+            cooldown -= 1
+            continue
+        above = above + 1 if p >= threshold else 0
+        if above >= CONSECUTIVE:
+            hits, above, cooldown = hits + 1, 0, refractory
+    return hits
+
+
+def _validate(model, mean, std, synth_val, recorded_val, name: str) -> dict:
+    """Streams the held-out recordings and picks the lowest threshold at which none of the real negatives —
+    the room audio and my other phrases — fires. The Windows voices are not used for it: their «Амадей» and
+    "Amadeo" score higher than anything the microphone hears, and obeying them cost recall on real speech
+    for no fewer false accepts in the room. How often they fire is reported instead."""
+    pad = np.zeros(int(0.6 * SAMPLE_RATE), np.float32)
+
+    def clips(cs):
+        return [stream_probs(model, mean, std, np.concatenate([pad, c, pad])) for c in cs]
+
+    room = stream_probs(model, mean, std, np.concatenate(recorded_val["ambient"])) if recorded_val["ambient"] else None
+    real = ([room] if room is not None else []) + clips(recorded_val["negative"])
+    synthetic = clips(synth_val["negative"])
+    positives = clips(recorded_val["positive"])
+    threshold = float(THRESHOLDS[-1])
+    for t in THRESHOLDS:
+        if sum(count_hits(p, t) for p in real) == 0:
+            threshold = float(t)
+            break
+    out = {
+        "threshold": threshold,
+        "val_recall": float(np.mean([count_hits(p, threshold) > 0 for p in positives])) if positives else None,
+        "val_room_minutes": round(sum(len(a) for a in recorded_val["ambient"]) / SAMPLE_RATE / 60, 1),
+        "val_recorded_phrases_fired": f"{sum(count_hits(p, threshold) > 0 for p in clips(recorded_val['negative']))}"
+                                      f" of {len(recorded_val['negative'])}",
+        "val_synthetic_phrases_fired": f"{sum(count_hits(p, threshold) > 0 for p in synthetic)} of {len(synthetic)}",
+    }
+    print(f"{name}: {out}", flush=True)
+    return out
+
+
+def _mine(model, mean, std, ambient: list[np.ndarray], aug, min_p: float = 0.1, cap: int = 4000) -> np.ndarray:
+    """Features of the highest-scoring room-audio windows, each once as it is and once augmented."""
+    found = []
+    for clip in ambient:
+        probs = stream_probs(model, mean, std, clip)
+        padded = np.concatenate([np.zeros(WINDOW - HOP, np.float32), clip])
+        found += [(p, padded, k) for k, p in enumerate(probs) if p >= min_p]
+    found.sort(key=lambda f: -f[0])
+    out = []
+    for _, padded, k in found[: cap // 2]:
+        w = padded[k * HOP:k * HOP + WINDOW]
+        out += [log_mel(w), log_mel(_fit_len(aug(w)))]
+    return np.stack(out) if out else np.zeros((0, N_MELS, FRAMES), np.float32)
 
 
 def evaluate_test(model_path=MODEL, config_path=CONFIG) -> dict | None:
@@ -186,12 +291,13 @@ def _spec_augment(x):
     """Masks up to 6 mel bands and up to 15 frames per example."""
     import torch
     n, _, mels, frames = x.shape
-    f = torch.randint(0, 7, (n,))
-    f0 = (torch.rand(n) * (mels - f)).long()
-    t = torch.randint(0, 16, (n,))
-    t0 = (torch.rand(n) * (frames - t)).long()
-    bands = torch.arange(mels)[None, :]
-    steps = torch.arange(frames)[None, :]
+    d = x.device
+    f = torch.randint(0, 7, (n,), device=d)
+    f0 = (torch.rand(n, device=d) * (mels - f)).long()
+    t = torch.randint(0, 16, (n,), device=d)
+    t0 = (torch.rand(n, device=d) * (frames - t)).long()
+    bands = torch.arange(mels, device=d)[None, :]
+    steps = torch.arange(frames, device=d)[None, :]
     fmask = (bands >= f0[:, None]) & (bands < (f0 + f)[:, None])
     tmask = (steps >= t0[:, None]) & (steps < (t0 + t)[:, None])
     x[fmask[:, None, :, None].expand_as(x)] = 0.0
@@ -199,23 +305,17 @@ def _spec_augment(x):
     return x
 
 
-def _predict(model, X) -> np.ndarray:
-    import torch
-    model.eval()
-    with torch.no_grad():
-        return torch.sigmoid(torch.cat([model(X[i:i + 1024]) for i in range(0, len(X), 1024)])).squeeze(1).numpy()
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-recorded", action="store_true", help="train on the Windows voices only")
     parser.add_argument("--epochs", type=int, default=25)
+    parser.add_argument("--no-mining", action="store_true", help="one round, without hard negatives")
     parser.add_argument("--eval-only", action="store_true", help="score the current model on the test session")
     args = parser.parse_args()
     if args.eval_only:
         print(json.dumps(evaluate_test(), indent=1))
     else:
-        train(recorded=not args.no_recorded, epochs=args.epochs)
+        train(recorded=not args.no_recorded, epochs=args.epochs, mine=not args.no_mining)
 
 
 if __name__ == "__main__":

@@ -93,3 +93,25 @@ def test_detector_streams_an_exported_model(tmp_path):
     assert det.count(clip(("silence", 1.0), ("speech", 1.5), ("silence", 1.0))) == 1   # once, then refractory
     assert make_model()(torch.zeros(2, 1, N_MELS, FRAMES)).shape == (2, 1)
     assert HOP == 1280
+
+    # the fast whole-recording scoring used for thresholds and mining matches the streaming detector
+    from aiforme.wakeword.train import count_hits, stream_probs
+
+    class Ramp(torch.nn.Module):          # smooth scores, so a mismatch would show in the values
+        def forward(self, x):
+            return x.mean(dim=(1, 2, 3))[:, None]
+
+    path2 = tmp_path / "ramp.onnx"
+    zeros, ones = np.zeros(N_MELS, np.float32), np.ones(N_MELS, np.float32)
+    torch.onnx.export(Normalized(Ramp(), zeros, ones), torch.zeros(1, 1, N_MELS, FRAMES), str(path2),
+                      input_names=["features"], output_names=["logit"], dynamo=False)
+    audio = clip(("silence", 0.7), ("speech", 0.9), ("silence", 1.1), ("speech", 0.4))
+    det2 = Detector(path2, tmp_path / "ww.json")
+    expected = []
+    for i in range(0, len(audio) - HOP + 1, HOP):
+        det2._buffer = np.concatenate([det2._buffer[HOP:], audio[i:i + HOP]])
+        expected.append(det2.probability(det2._buffer))
+    fast = stream_probs(Ramp(), zeros, ones, audio)
+    assert np.allclose(fast, expected, atol=1e-5)
+    probs = stream_probs(Loud(), zeros, ones, clip(("silence", 1.0), ("speech", 1.5), ("silence", 1.0)))
+    assert count_hits(probs, 0.5, refractory_s=3.0) == 1 and count_hits(probs, 0.5) == 2

@@ -1,0 +1,30 @@
+{
+ "threshold": 0.9771653413772583,
+ "consecutive": 2,
+ "refractory_s": 1.5,
+ "trained_on_recordings": true,
+ "parameters": 60465,
+ "epochs": 25,
+ "fit_windows": 9997,
+ "val_windows": 1873,
+ "val_recall_at_threshold": 0.6652173913043479,
+ "val_streaming": {
+  "recall": 0.9666666666666667,
+  "positives": 30,
+  "false_accepts": 0,
+  "ambient_minutes": 2.0,
+  "false_accepts_per_hour": 0.0
+ },
+ "test": {
+  "recall": 0.84,
+  "positives": 50,
+  "false_accepts": 2,
+  "ambient_minutes": 10.0,
+  "false_accepts_per_hour": 12.0,
+  "misses": "all 8 in the whispered takes (11-19); max probability 0.58-0.96 under the 0.977 threshold",
+  "false_accept_audio": [
+   "speech: 'А? Не знаю. Это те, которые...'",
+   "a cough"
+  ]
+ }
+}
