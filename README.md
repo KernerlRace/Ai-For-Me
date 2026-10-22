@@ -6,7 +6,7 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 1 in progress — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
+> **Status:** Phase 1 done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
 > Whisper on the GPU, intent recognition in Russian and English (92.8% on held-out phrases, 90.1% through speech) and
 > 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings with hard-negative mining (90% of wake words in a separate test session, no false accepts in 20 minutes of held-out audio). Phase 0 — the event
 > bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
@@ -108,7 +108,7 @@ uv run python -m aiforme tail -n 20 'voice.*'
 
 - [x] Vision, module list, architecture and build order
 - [x] Phase 0 — repository layout, shared event bus, basic memory, CI and tests
-- [ ] Phase 1 — voice orchestrator MVP: wake word, STT, 10–15 intents, embeddings baseline
+- [x] Phase 1 — voice orchestrator: own wake-word model, Whisper STT, 14 intents, four embeddings compared
 - [ ] Phase 2 — mode autopilot: process detection, calendar integration
 - [ ] Phase 3 — active learning loop: corrections UI, retraining, accuracy over time
 - [ ] Phase 4 — vision agent: screenshot + VLM on simple tasks, then arbitrary actions
