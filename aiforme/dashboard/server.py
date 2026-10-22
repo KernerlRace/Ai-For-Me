@@ -57,6 +57,18 @@ def create_app(calendar: Calendar, bus_path: Path | None = None) -> FastAPI:
     def health() -> dict:
         return {"ok": True}
 
+    @app.get("/api/mode")
+    def mode() -> dict:
+        """The mode the autopilot last switched to, and why."""
+        if bus_path is None:
+            return {"mode": None}
+        with EventBus(bus_path) as bus:
+            last = bus.recent(1, "mode.changed")
+        if not last:
+            return {"mode": None}
+        p = last[0].payload
+        return {"mode": p.get("mode"), "reason": p.get("reason"), "since": last[0].created_at}
+
     @app.get("/api/events")
     def list_events(start: datetime, end: datetime) -> list[dict]:
         return [e.to_json() for e in calendar.between(_naive(start), _naive(end))]

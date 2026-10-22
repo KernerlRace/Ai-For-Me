@@ -1,4 +1,5 @@
 import { CalendarPage } from "./CalendarPage";
+import { ModeBadge } from "./ModeBadge";
 
 /** One page for now; the action log, modes and finance get their own as their phases land. */
 export function App() {
@@ -10,6 +11,8 @@ export function App() {
         <nav>
           <a className="active" href="/">Календарь</a>
         </nav>
+        <span className="spacer" />
+        <ModeBadge />
       </header>
       <main>
         <CalendarPage />

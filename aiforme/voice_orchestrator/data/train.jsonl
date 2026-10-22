@@ -223,6 +223,40 @@
 {"text": "stop", "intent": "cancel"}
 {"text": "no thanks", "intent": "cancel"}
 {"text": "i changed my mind", "intent": "cancel"}
+{"text": "включи игровой режим", "intent": "set_mode", "slots": {"mode": "игровой"}}
+{"text": "игровой режим", "intent": "set_mode", "slots": {"mode": "игровой"}}
+{"text": "переключись в режим кодинга", "intent": "set_mode", "slots": {"mode": "кодинга"}}
+{"text": "рабочий режим", "intent": "set_mode", "slots": {"mode": "рабочий"}}
+{"text": "режим встречи", "intent": "set_mode", "slots": {"mode": "встречи"}}
+{"text": "включи режим созвона", "intent": "set_mode", "slots": {"mode": "созвона"}}
+{"text": "верни обычный режим", "intent": "set_mode", "slots": {"mode": "обычный"}}
+{"text": "обычный режим", "intent": "set_mode", "slots": {"mode": "обычный"}}
+{"text": "автоматический режим", "intent": "set_mode", "slots": {"mode": "автоматический"}}
+{"text": "я сажусь играть", "intent": "set_mode", "slots": {"mode": "играть"}}
+{"text": "я буду программировать", "intent": "set_mode", "slots": {"mode": "программировать"}}
+{"text": "gaming mode", "intent": "set_mode", "slots": {"mode": "gaming"}}
+{"text": "switch to gaming mode", "intent": "set_mode", "slots": {"mode": "gaming"}}
+{"text": "turn on coding mode", "intent": "set_mode", "slots": {"mode": "coding"}}
+{"text": "work mode", "intent": "set_mode", "slots": {"mode": "work"}}
+{"text": "meeting mode", "intent": "set_mode", "slots": {"mode": "meeting"}}
+{"text": "start call mode", "intent": "set_mode", "slots": {"mode": "call"}}
+{"text": "back to normal mode", "intent": "set_mode", "slots": {"mode": "normal"}}
+{"text": "normal mode please", "intent": "set_mode", "slots": {"mode": "normal"}}
+{"text": "automatic mode", "intent": "set_mode", "slots": {"mode": "automatic"}}
+{"text": "i'm going to play", "intent": "set_mode", "slots": {"mode": "play"}}
+{"text": "time to code", "intent": "set_mode", "slots": {"mode": "code"}}
+{"text": "что у меня сегодня", "intent": "agenda"}
+{"text": "какие планы на сегодня", "intent": "agenda"}
+{"text": "что в календаре", "intent": "agenda"}
+{"text": "расписание на сегодня", "intent": "agenda"}
+{"text": "есть ли у меня встречи сегодня", "intent": "agenda"}
+{"text": "что у меня по плану", "intent": "agenda"}
+{"text": "what's on my calendar today", "intent": "agenda"}
+{"text": "what do i have today", "intent": "agenda"}
+{"text": "any meetings today", "intent": "agenda"}
+{"text": "show my schedule", "intent": "agenda"}
+{"text": "what's my agenda", "intent": "agenda"}
+{"text": "what's next on my calendar", "intent": "agenda"}
 {"text": "закажи пиццу", "intent": "out_of_scope"}
 {"text": "поставь будильник на семь", "intent": "out_of_scope"}
 {"text": "расскажи анекдот", "intent": "out_of_scope"}

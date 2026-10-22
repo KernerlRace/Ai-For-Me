@@ -2,7 +2,7 @@
 
 Phase 1 of [AI For Me](../../README.md): say «Амадеус» and a command in Russian or English, and the machine does
 it — opens or closes an app, finds a file, types dictated text, searches the web, changes the volume, controls
-media, takes a screenshot, locks the screen or tells the time.
+media, takes a screenshot, locks the screen, tells the time, reads today's calendar or switches the machine's mode.
 
 ```mermaid
 flowchart LR
@@ -28,41 +28,43 @@ its own; `python -m aiforme say "открой телеграм"` enters the chai
 ## Intents
 
 `open_app`, `close_app`, `find_file`, `dictate`, `web_search`, `volume_up`, `volume_down`, `mute`, `media_play_pause`,
-`media_next`, `screenshot`, `lock_screen`, `tell_time`, `cancel` — and `out_of_scope` for everything else: an explicit
+`media_next`, `screenshot`, `lock_screen`, `tell_time`, `cancel`, and from Phase 2 `set_mode` and `agenda` — and
+`out_of_scope` for everything else: an explicit
 class with its own examples, plus a confidence threshold chosen by cross-validation on the training set.
 
-The data ([data/](data)) is hand-written, Russian and English: 255 training phrases and 152 test phrases written
+The data ([data/](data)) is hand-written, Russian and English: 289 training phrases and 170 test phrases written
 separately — other wording, Whisper-style capitals and punctuation, slang (*«телегу»*, *«скипни»*), apps the training
 data never names, and out-of-scope requests that look like commands (*«открой окно в комнате»*). Both sets were
 written by the same person during development, so the numbers are an optimistic estimate.
 
 ## Results: intent recognition
 
-Held-out test set, 152 phrases ([evaluate.py](evaluate.py), `eval/results/intent_*.json`):
+Held-out test set, 170 phrases ([evaluate.py](evaluate.py), `eval/results/intent_*.json`):
 
 | Metric | TF-IDF | Char-CNN | MiniLM | E5 |
 |---|---|---|---|---|
 | Built from | training data only | training data only, trained from scratch | pretrained | pretrained |
-| Intent accuracy, all test phrases | 84.9% | 70.4% | 80.3% | **92.8%** |
-| In-scope intent accuracy, Russian / English | 84.4% / 87.5% | 67.2% / 68.8% | 68.8% / 90.6% | **95.3% / 92.2%** |
-| Out-of-scope recall | 79.2% | 83.3% | 83.3% | **87.5%** |
-| Commands wrongly rejected as out-of-scope | 10.9% | 28.9% | 12.5% | **4.7%** |
-| Slot exactly right, end to end | 53.6% | 46.4% | 42.9% | **58.9%** |
-| Latency per command, CPU | 0.6 ms | 0.9 ms | 18 ms | 20 ms |
+| Intent accuracy, all test phrases | 84.1% | 71.2% | 80.6% | **92.4%** |
+| In-scope intent accuracy, Russian / English | 82.2% / 86.3% | 64.4% / 74.0% | 72.6% / 90.4% | **94.5% / 93.2%** |
+| Out-of-scope recall | **83.3%** | **83.3%** | 75.0% | **83.3%** |
+| Commands wrongly rejected as out-of-scope | 13.7% | 28.1% | 11.0% | **4.8%** |
+| Slot exactly right, end to end | 51.5% | 42.4% | 40.9% | **56.1%** |
+| Latency per command, CPU | 0.6 ms | 1.2 ms | 20 ms | 19 ms |
 
-<sub>TF-IDF: character 2–5-grams. Char-CNN: character embeddings, filters 2–5 wide, trained on the 255 phrases with
+<sub>TF-IDF: character 2–5-grams. Char-CNN: character embeddings, filters 2–5 wide, trained on the 289 phrases with
 simulated typos; one seed. MiniLM: `paraphrase-multilingual-MiniLM-L12-v2`. E5: `multilingual-e5-small`. The test set
 was scored once per model; nothing was tuned on it.</sub>
 
 - **E5 is the default.** It is the only one that is good in both languages; MiniLM, also multilingual, is far weaker
-  in Russian (68.8%).
-- **From scratch, the simple model wins.** With 255 phrases the char-CNN cannot learn what a pretrained encoder brings
+  in Russian (72.6%).
+- **From scratch, the simple model wins.** With 289 phrases the char-CNN cannot learn what a pretrained encoder brings
   and loses to TF-IDF, which needs no training at all — the same lesson as in
   [causal-method-advisor](https://github.com/KernerlRace/causal-method-advisor), where a model trained from scratch only
   beat the baseline after pretraining on Wikipedia.
 - **Slots are the weak part** for every embedding: carrier phrases the training data never saw (*"could you launch
   chrome"*, *«поищи на диске»*) leave command words in the slot. App matching recovers most of these — it tries every
-  span of the phrase — but `find_file` and `web_search` queries stay polluted.
+  span of the phrase, and a mode is found by its word (*«давай игровой режим»* → `gaming`, right for all 10 test
+  phrases although only 4 slots match exactly) — but `find_file` and `web_search` queries stay polluted.
 
 ## Results: wake word
 
@@ -119,15 +121,15 @@ was too high for a third of quiet speech.
 
 ## Results: through speech
 
-The same 152 test phrases, spoken by the Windows voices (Irina for Russian, Zira and Hazel for English), transcribed by
+The same 170 test phrases, spoken by the Windows voices (Irina for Russian, Zira and Hazel for English), transcribed by
 Whisper `large-v3-turbo` on the GPU and classified with E5 ([spoken_eval.py](spoken_eval.py),
 `eval/results/spoken_e5.json`):
 
 | Metric | On the written text | Through speech |
 |---|---|---|
-| Transcript identical after normalisation | — | 89.5% |
-| Intent accuracy, all test phrases | 92.8% | **90.1%** |
-| In-scope intent accuracy | 93.8% | 90.6% |
+| Transcript identical after normalisation | — | 90.6% |
+| Intent accuracy, all test phrases | 92.4% | **90.6%** |
+| In-scope intent accuracy | 93.8% | 91.8% |
 
 Most transcript differences are harmless: brand names in Latin (*«Запусти Photoshop»*), digits for numbers. The costly
 ones are misheard words — *«скипни»* became *«Сгибни»* (→ mute), *"Write: okay"* became *"Right, okay"* (→ out of

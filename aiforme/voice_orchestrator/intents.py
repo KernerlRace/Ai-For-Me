@@ -1,4 +1,4 @@
-"""The intents the voice orchestrator understands in Phase 1, and the slot each one takes."""
+"""The intents the voice orchestrator understands, and the slot each one takes."""
 from __future__ import annotations
 
 OUT_OF_SCOPE = "out_of_scope"   # anything that is not one of the commands below
@@ -19,6 +19,8 @@ INTENTS: dict[str, str | None] = {
     "lock_screen": None,
     "tell_time": None,
     "cancel": None,
+    "set_mode": "mode",          # Phase 2: «игровой режим», "meeting mode", «обычный режим»
+    "agenda": None,              # Phase 2: what is in the calendar today
 }
 
 LABELS = (*INTENTS, OUT_OF_SCOPE)

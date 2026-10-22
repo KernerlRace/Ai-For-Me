@@ -1,7 +1,7 @@
 """The voice orchestrator as bus modules: text → intent → action → spoken reply.
 
     voice.transcribed / text.command ─▶ voice_intent ─▶ intent.recognized / intent.unknown
-    intent.* ─▶ voice_actions ─▶ action.done / action.failed (+ assistant.reply)
+    intent.* ─▶ voice_actions ─▶ action.done / action.failed (+ assistant.reply, mode.requested)
     assistant.reply ─▶ voice_reply (prints, and speaks through Windows' built-in voices)
 
 The listener (listener.py) publishes voice.transcribed; `python -m aiforme say` publishes text.command, so
@@ -75,7 +75,28 @@ REPLIES = {
     "no_slot": ("Не удалось разобрать, что именно.", "I didn't catch what exactly."),
     "failed": ("Не получилось: {error}.", "That didn't work: {error}."),
     "time": ("Сейчас {time}.", "It's {time}."),
+    "agenda": ("Сегодня: {items}.", "Today: {items}."),
+    "agenda_empty": ("Сегодня в календаре ничего нет.", "Nothing in the calendar today."),
+    "agenda_none": ("Календарь не подключён.", "The calendar is not connected."),
 }
+
+# spoken mode name -> the autopilot's mode; matched on the start of each word, so cases and forms all work
+MODE_WORDS = {
+    "gaming": ("игр", "game", "gaming", "play"),
+    "coding": ("код", "кодин", "работ", "рабоч", "програм", "coding", "code", "work", "dev"),
+    "meeting": ("встреч", "созвон", "совещ", "звонк", "meeting", "call", "conference"),
+    "normal": ("обычн", "нормал", "normal", "default", "usual"),
+    "auto": ("авто", "auto", "automatic"),
+}
+
+
+def mode_of(phrase: str) -> str | None:
+    """'игровой' / 'режим игры' / 'gaming' -> 'gaming'; None if no mode is named."""
+    for word in phrase.lower().split():
+        for mode, stems in MODE_WORDS.items():
+            if any(word.startswith(stem) for stem in stems):
+                return mode
+    return None
 
 VOLUME_STEP = 5     # each volume key press is 2%
 
@@ -84,8 +105,9 @@ class ActionModule(Module):
     name = "voice_actions"
     subscribes = ("intent.recognized", "intent.unknown")
 
-    def __init__(self, desktop: Desktop, now: Callable[[], datetime] = datetime.now):
-        self.desktop, self.now = desktop, now
+    def __init__(self, desktop: Desktop, now: Callable[[], datetime] = datetime.now,
+                 agenda: Callable[[datetime], list] | None = None):
+        self.desktop, self.now, self.agenda = desktop, now, agenda
 
     def handle(self, event: Event):
         if _stale(event):
@@ -101,6 +123,15 @@ class ActionModule(Module):
         if slot and not value:
             yield Event("action.failed", {"intent": intent, "error": f"no {slot}"})
             yield _reply(REPLIES["no_slot"][lang])
+            return
+        if intent == "set_mode":                     # the autopilot switches and confirms
+            mode = mode_of(value)
+            if mode is None:
+                yield Event("action.failed", {"intent": intent, "slots": slots, "error": f"no mode in {value!r}"})
+                yield _reply(REPLIES["no_slot"][lang])
+                return
+            yield Event("mode.requested", {"mode": mode, "language": "ru" if lang == 0 else "en"})
+            yield Event("action.done", {"intent": intent, "slots": slots, "result": mode})
             return
         try:
             result, reply = self._do(intent, value, lang)
@@ -146,7 +177,18 @@ class ActionModule(Module):
                 return now, REPLIES["time"][lang].format(time=now)
             case "cancel":
                 return intent, None
+            case "agenda":
+                return intent, self._agenda(lang)
         raise ActionError(f"no action for intent {intent!r}", f"нет действия для «{intent}»")
+
+    def _agenda(self, lang: int) -> str:
+        if self.agenda is None:
+            return REPLIES["agenda_none"][lang]
+        events = self.agenda(self.now())
+        if not events:
+            return REPLIES["agenda_empty"][lang]
+        items = ", ".join(f"{e.start:%H:%M} {e.title}" for e in events)
+        return REPLIES["agenda"][lang].format(items=items)
 
 
 def _reply(text: str) -> Event:
@@ -156,12 +198,17 @@ def _reply(text: str) -> Event:
 class ReplyModule(Module):
     """Prints and speaks replies; completed actions are printed only, so silent ones still show up."""
     name = "voice_reply"
-    subscribes = ("assistant.reply", "action.done")
+    subscribes = ("assistant.reply", "action.done", "mode.changed")
 
     def __init__(self, speak: Callable[[str], None] | None = None):
         self.speak = speak
 
     def handle(self, event: Event):
+        if event.topic == "mode.changed":
+            p = event.payload
+            done = f" — {', '.join(p['actions'])}" if p.get("actions") else ""
+            print(f"  ◆ mode: {p.get('mode')} ({p.get('reason')}){done}", flush=True)
+            return
         if event.topic == "action.done":
             print(f"  ✓ {event.payload.get('intent')}: {event.payload.get('result')}", flush=True)
             return

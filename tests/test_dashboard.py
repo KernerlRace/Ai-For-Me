@@ -37,6 +37,17 @@ def test_create_list_update_delete(tmp_path):
     assert actions == ["added", "updated", "deleted"]
 
 
+def test_mode_is_the_last_change(tmp_path):
+    from aiforme.core import Event
+    client, _, bus_path = make(tmp_path)
+    assert client.get("/api/mode").json() == {"mode": None}
+    with EventBus(bus_path) as bus:
+        bus.publish(Event("mode.changed", {"mode": "coding", "reason": "IDE"}))
+        bus.publish(Event("mode.changed", {"mode": "gaming", "reason": "game running: dota2.exe"}))
+    body = client.get("/api/mode").json()
+    assert body["mode"] == "gaming" and body["reason"] == "game running: dota2.exe"
+
+
 def test_bad_input_is_rejected(tmp_path):
     client, *_ = make(tmp_path)
     backwards = {"title": "X", "start": "2026-10-23T15:00", "end": "2026-10-23T14:00"}

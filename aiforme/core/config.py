@@ -22,3 +22,11 @@ def memory_path() -> Path:
 
 def calendar_path() -> Path:
     return data_dir() / "calendar.sqlite3"
+
+
+def modes_path() -> Path:
+    return data_dir() / "modes.json"
+
+
+def activity_path() -> Path:
+    return data_dir() / "activity.sqlite3"

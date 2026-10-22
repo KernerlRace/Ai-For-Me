@@ -15,10 +15,10 @@ import json
 import logging
 import sys
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiforme.core import Event, EventBus, run
-from aiforme.core.config import bus_path, calendar_path
+from aiforme.core.config import activity_path, bus_path, calendar_path, modes_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -69,7 +69,9 @@ def _run(args) -> int:
     for noisy in ("httpx", "httpx2", "huggingface_hub", "sentence_transformers", "faster_whisper"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     print(f"Training the intent classifier ({args.embedder})...", flush=True)
-    modules = [IntentModule(train(args.embedder)), ActionModule(WindowsDesktop()),
+    from aiforme.calendar import Calendar
+    calendar = Calendar(calendar_path())
+    modules = [IntentModule(train(args.embedder)), ActionModule(WindowsDesktop(), agenda=_today(calendar)),
                ReplyModule(None if args.no_speak else windows_speak)]
     stop = threading.Event()
 
@@ -79,7 +81,7 @@ def _run(args) -> int:
 
     worker = threading.Thread(target=serve, name="modules")
     worker.start()
-    background = _background(stop)
+    background = _background(stop, calendar)
     try:
         if args.no_voice:
             print('Ready. Send commands with: python -m aiforme say "open notepad"', flush=True)
@@ -96,13 +98,22 @@ def _run(args) -> int:
     return 0
 
 
-def _background(stop: threading.Event) -> list[threading.Thread]:
-    """The web UI and the calendar watcher, in threads of their own, until `stop`."""
-    from aiforme.calendar import Calendar
+def _today(calendar):
+    def agenda(now: datetime):
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return calendar.between(start, start + timedelta(days=1))
+    return agenda
+
+
+def _background(stop: threading.Event, calendar) -> list[threading.Thread]:
+    """The web UI, the calendar watcher and the mode autopilot, in threads of their own, until `stop`."""
     from aiforme.calendar.watcher import CalendarWatcher
     from aiforme.dashboard.server import HOST, PORT, serve
+    from aiforme.mode_autopilot.actions import ModeActions, WindowsSystem, load_settings
+    from aiforme.mode_autopilot.activity import WindowsActivity
+    from aiforme.mode_autopilot.autopilot import Autopilot
+    from aiforme.mode_autopilot.log import ActivityLog
 
-    calendar = Calendar(calendar_path())
     server = serve(calendar, bus_path())
 
     def ui():
@@ -113,7 +124,14 @@ def _background(stop: threading.Event) -> list[threading.Thread]:
         with EventBus(bus_path()) as bus:
             CalendarWatcher(calendar).run(bus, stop)
 
-    threads = [threading.Thread(target=ui, name="dashboard"), threading.Thread(target=watch, name="calendar")]
+    def autopilot():
+        actions = ModeActions(WindowsSystem(), load_settings(modes_path()))
+        pilot = Autopilot(WindowsActivity().sample, actions, activity_log=ActivityLog(activity_path()))
+        with EventBus(bus_path()) as bus:
+            pilot.run(bus, stop)
+
+    threads = [threading.Thread(target=ui, name="dashboard"), threading.Thread(target=watch, name="calendar"),
+               threading.Thread(target=autopilot, name="autopilot")]
     for thread in threads:
         thread.start()
     print(f"Dashboard: http://{HOST}:{PORT}", flush=True)

@@ -52,6 +52,10 @@ body {
 .name { font-weight: 600; letter-spacing: 0.02em; margin-right: 20px; }
 .topbar nav a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
 .topbar nav a.active { color: var(--text); background: var(--bg); }
+.mode { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.mode-gaming { color: var(--shift); border-color: color-mix(in srgb, var(--shift) 45%, var(--border)); }
+.mode-meeting { color: var(--meeting); border-color: color-mix(in srgb, var(--meeting) 45%, var(--border)); }
+.mode-coding { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 
 main { flex: 1; min-height: 0; padding: 16px 20px 20px; }
 .page { height: 100%; display: flex; flex-direction: column; gap: 8px; }
