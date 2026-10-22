@@ -18,3 +18,7 @@ def bus_path() -> Path:
 
 def memory_path() -> Path:
     return data_dir() / "memory.sqlite3"
+
+
+def calendar_path() -> Path:
+    return data_dir() / "calendar.sqlite3"

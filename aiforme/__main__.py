@@ -4,6 +4,7 @@
     python -m aiforme run --push-to-talk        # Enter instead of «Амадеус»
     python -m aiforme run --no-voice            # no microphone; send commands with `say`
     python -m aiforme say "открой телеграм"     # a typed command, as if it was spoken
+    python -m aiforme dashboard                 # only the web UI, http://127.0.0.1:8765
     python -m aiforme publish voice.transcribed '{"text": "open the terminal"}'
     python -m aiforme tail -n 50 'voice.*'
 """
@@ -17,7 +18,7 @@ import threading
 from datetime import datetime
 
 from aiforme.core import Event, EventBus, run
-from aiforme.core.config import bus_path
+from aiforme.core.config import bus_path, calendar_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,10 +39,13 @@ def main(argv: list[str] | None = None) -> int:
     start.add_argument("--no-speak", action="store_true", help="print replies without speaking them")
     start.add_argument("--stt-device", default="auto", choices=("auto", "cuda", "cpu"))
     start.add_argument("--input-device", default=None, help="microphone index or name (sounddevice)")
+    commands.add_parser("dashboard", help="run only the web UI")
     args = parser.parse_args(argv)
 
     if args.command == "run":
         return _run(args)
+    if args.command == "dashboard":
+        return _dashboard()
     with EventBus(bus_path()) as bus:
         if args.command == "publish":
             event = bus.publish(Event(args.topic, json.loads(args.payload), source="cli"))
@@ -75,6 +79,7 @@ def _run(args) -> int:
 
     worker = threading.Thread(target=serve, name="modules")
     worker.start()
+    background = _background(stop)
     try:
         if args.no_voice:
             print('Ready. Send commands with: python -m aiforme say "open notepad"', flush=True)
@@ -86,6 +91,43 @@ def _run(args) -> int:
     finally:
         stop.set()
         worker.join()
+        for thread in background:
+            thread.join(timeout=5)
+    return 0
+
+
+def _background(stop: threading.Event) -> list[threading.Thread]:
+    """The web UI and the calendar watcher, in threads of their own, until `stop`."""
+    from aiforme.calendar import Calendar
+    from aiforme.calendar.watcher import CalendarWatcher
+    from aiforme.dashboard.server import HOST, PORT, serve
+
+    calendar = Calendar(calendar_path())
+    server = serve(calendar, bus_path())
+
+    def ui():
+        threading.Thread(target=lambda: (stop.wait(), setattr(server, "should_exit", True)), daemon=True).start()
+        server.run()
+
+    def watch():
+        with EventBus(bus_path()) as bus:
+            CalendarWatcher(calendar).run(bus, stop)
+
+    threads = [threading.Thread(target=ui, name="dashboard"), threading.Thread(target=watch, name="calendar")]
+    for thread in threads:
+        thread.start()
+    print(f"Dashboard: http://{HOST}:{PORT}", flush=True)
+    return threads
+
+
+def _dashboard() -> int:
+    from aiforme.calendar import Calendar
+    from aiforme.dashboard.server import HOST, PORT, WEB_DIST, serve
+
+    if not WEB_DIST.exists():
+        print("The UI is not built yet: cd aiforme/dashboard/web && npm install && npm run build", file=sys.stderr)
+    print(f"Dashboard: http://{HOST}:{PORT}  (Ctrl+C to stop)", flush=True)
+    serve(Calendar(calendar_path()), bus_path()).run()
     return 0
 
 
