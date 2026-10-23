@@ -65,3 +65,21 @@ def test_times_with_a_time_zone_become_local(tmp_path):
                                          "end": "2026-10-23T15:00:00Z"})
     ev = cal.get(r.json()["id"])
     assert ev.start.tzinfo is None and (ev.end - ev.start).total_seconds() == 3600
+
+
+def test_serves_the_built_app_and_nothing_outside_it(tmp_path, monkeypatch):
+    from aiforme.dashboard import server
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<div id=root></div>")
+    (dist / "assets" / "app.js").write_text("console.log(1)")
+    (dist / "favicon.svg").write_text("<svg/>")
+    (tmp_path / "secret.txt").write_text("not for the browser")
+    monkeypatch.setattr(server, "WEB_DIST", dist.resolve())
+    client = TestClient(server.create_app(Calendar(tmp_path / "calendar.sqlite3")))
+
+    assert client.get("/assets/app.js").text == "console.log(1)"
+    assert client.get("/favicon.svg").text == "<svg/>"
+    assert client.get("/calendar/week").text == "<div id=root></div>"       # client-side routes get the app
+    assert client.get("/..%2Fsecret.txt").text == "<div id=root></div>"
+    assert client.get("/api/health").json() == {"ok": True}                # the API still wins
