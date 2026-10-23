@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from aiforme.calendar import Calendar
+from aiforme.calendar import Calendar, CalendarEvent
 from aiforme.calendar.watcher import CalendarWatcher
 
 T = datetime(2026, 10, 23, 15, 0)
@@ -37,6 +37,14 @@ def test_validation(cal):
     with pytest.raises(ValueError):
         cal.update(ev.id, id=5)
 
+
+def test_update_trims_the_title_and_keeps_the_other_fields(cal):
+    ev = cal.add("  Shift ", T, T + timedelta(hours=8), kind="shift", notes="bring the badge")
+    assert ev.title == "Shift"
+    renamed = cal.update(ev.id, title="  Night shift  ")
+    assert renamed == CalendarEvent(ev.id, "Night shift", ev.start, ev.end, "shift", "bring the badge")
+    with pytest.raises(KeyError):
+        cal.update(ev.id + 1, title="Nobody")
 
 def test_between_returns_overlapping_events_in_order(cal):
     late = cal.add("Late", T + timedelta(hours=3), T + timedelta(hours=4))
