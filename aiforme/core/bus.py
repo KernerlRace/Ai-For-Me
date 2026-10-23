@@ -17,6 +17,7 @@ from collections.abc import Iterable
 from dataclasses import replace
 from pathlib import Path
 
+from aiforme.core.db import connect
 from aiforme.core.events import Event, check_pattern
 
 SCHEMA = """
@@ -37,12 +38,7 @@ CREATE TABLE IF NOT EXISTS cursors (
 
 class EventBus:
     def __init__(self, path: str | Path = ":memory:", timeout: float = 10.0):
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        # isolation_level=None: autocommit, transactions are opened explicitly with BEGIN IMMEDIATE
-        self._conn = sqlite3.connect(path, timeout=timeout, isolation_level=None)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(SCHEMA)
+        self._conn = connect(path, SCHEMA, timeout)
 
     def close(self) -> None:
         self._conn.close()

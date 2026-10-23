@@ -6,10 +6,11 @@ else. Times are local and naive — one person, one machine, one time zone.
 """
 from __future__ import annotations
 
-import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
+
+from aiforme.core.db import connect
 
 KINDS = ("meeting", "shift", "other")
 
@@ -51,12 +52,8 @@ def _check(title: str, start: datetime, end: datetime, kind: str) -> None:
 
 class Calendar:
     def __init__(self, path: str | Path = ":memory:", timeout: float = 10.0):
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
         # used from the web server's threads as well as the assistant's; sqlite serialises the writes
-        self._conn = sqlite3.connect(path, timeout=timeout, isolation_level=None, check_same_thread=False)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(SCHEMA)
+        self._conn = connect(path, SCHEMA, timeout, check_same_thread=False)
 
     def close(self) -> None:
         self._conn.close()
