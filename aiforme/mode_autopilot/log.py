@@ -27,8 +27,17 @@ CREATE INDEX IF NOT EXISTS activity_time ON activity (time);
 
 
 class ActivityLog:
-    def __init__(self, path: str | Path = ":memory:"):
-        self._conn = connect(path, SCHEMA)
+    def __init__(self, path: str | Path = ":memory:", timeout: float = 10.0):
+        self._conn = connect(path, SCHEMA, timeout)
+
+    def close(self) -> None:
+        self._conn.close()
+
+    def __enter__(self) -> ActivityLog:
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
 
     def add(self, a: Activity, mode: str, manual: bool = False) -> None:
         self._conn.execute(
@@ -43,6 +52,3 @@ class ActivityLog:
             "WHERE time >= ? ORDER BY time", (since,)).fetchall()
         return [(Activity(t, fg, title, cat, frozenset(json.loads(run)), tuple(json.loads(games))), mode, bool(man))
                 for t, fg, title, cat, run, games, mode, man in rows]
-
-    def close(self) -> None:
-        self._conn.close()
