@@ -6,9 +6,9 @@ the git-ignored data folder like everything else.
 from __future__ import annotations
 
 import json
-import sqlite3
 from pathlib import Path
 
+from aiforme.core.db import connect
 from aiforme.mode_autopilot.activity import Activity
 
 SCHEMA = """
@@ -28,11 +28,7 @@ CREATE INDEX IF NOT EXISTS activity_time ON activity (time);
 
 class ActivityLog:
     def __init__(self, path: str | Path = ":memory:"):
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(path, timeout=10, isolation_level=None)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(SCHEMA)
+        self._conn = connect(path, SCHEMA)
 
     def add(self, a: Activity, mode: str, manual: bool = False) -> None:
         self._conn.execute(

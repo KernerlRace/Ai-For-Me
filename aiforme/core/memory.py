@@ -7,10 +7,11 @@ modules talk to memory only through get/set, so the storage behind it can change
 from __future__ import annotations
 
 import json
-import sqlite3
 import time
 from pathlib import Path
 from typing import Any
+
+from aiforme.core.db import connect
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS memory (
@@ -25,11 +26,7 @@ CREATE TABLE IF NOT EXISTS memory (
 
 class Memory:
     def __init__(self, path: str | Path = ":memory:", timeout: float = 10.0):
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(path, timeout=timeout, isolation_level=None)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(SCHEMA)
+        self._conn = connect(path, SCHEMA, timeout)
 
     def close(self) -> None:
         self._conn.close()
