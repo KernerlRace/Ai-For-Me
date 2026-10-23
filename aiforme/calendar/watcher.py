@@ -29,8 +29,11 @@ class CalendarWatcher:
     def check(self) -> list[Event]:
         """The announcements due now, each once."""
         t = self.now()
+        horizon = t - timedelta(days=1)
+        # an event that ended before the horizon is never looked at again, so its keys can go
+        self._sent = {key for key in self._sent if key[2] > horizon}
         out = []
-        for ev in self.calendar.between(t - timedelta(days=1), t + self.lead + timedelta(seconds=1)):
+        for ev in self.calendar.between(horizon, t + self.lead + timedelta(seconds=1)):
             due = [("soon", ev.start - self.lead), ("started", ev.start), ("ended", ev.end)]
             for what, when in due:
                 key = (ev.id, ev.start, ev.end, what)

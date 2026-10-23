@@ -95,3 +95,15 @@ def test_watcher_announces_a_moved_event_again(cal):
     cal.update(ev.id, start=T + timedelta(hours=1), end=T + timedelta(hours=2))
     clock.t = T + timedelta(minutes=59)
     assert [e.topic for e in w.check()] == ["calendar.event.soon"]
+
+
+def test_watcher_forgets_events_a_day_after_they_end(cal):
+    clock = Clock(T - timedelta(minutes=5))
+    w = CalendarWatcher(cal, lead=timedelta(minutes=2), now=clock)
+    cal.add("Call", T, T + timedelta(minutes=30))
+    for minutes in (-2, 0, 31):
+        clock.t = T + timedelta(minutes=minutes)
+        w.check()
+    assert len(w._sent) == 3
+    clock.t = T + timedelta(days=1, minutes=31)
+    assert w.check() == [] and w._sent == set()
