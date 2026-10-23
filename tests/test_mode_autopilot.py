@@ -165,3 +165,15 @@ def test_autopilot_end_to_end(tmp_path):
                     ("assistant.reply", "Включён игровой режим.")]
     rows = activity_log.rows()
     assert len(rows) == 7 and rows[-1][1] == "gaming" and rows[-1][2] is True     # voice: a correction
+
+
+def test_activity_log_survives_a_restart_and_filters_by_time(tmp_path):
+    path = tmp_path / "activity.sqlite3"
+    game = Activity(10.0, "dota2.exe", "Dota 2", "game", frozenset({"game", "browser"}), ("dota2.exe",))
+    with ActivityLog(path) as log:
+        log.add(act(0.0, "ide", fg="Code.exe"), "coding")
+        log.add(game, "normal", manual=True)
+    with ActivityLog(path) as reopened:
+        assert [(a.time, mode, manual) for a, mode, manual in reopened.rows()] == [(0.0, "coding", False),
+                                                                                   (10.0, "normal", True)]
+        assert reopened.rows(since=5.0) == [(game, "normal", True)]
