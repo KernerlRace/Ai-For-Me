@@ -71,7 +71,10 @@ def create_app(calendar: Calendar, bus_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/events")
     def list_events(start: datetime, end: datetime) -> list[dict]:
-        return [e.to_json() for e in calendar.between(_naive(start), _naive(end))]
+        start, end = _naive(start), _naive(end)
+        if end <= start:
+            raise HTTPException(422, f"the range must end after it starts: {start} – {end}")
+        return [e.to_json() for e in calendar.between(start, end)]
 
     @app.post("/api/events", status_code=201)
     def add_event(body: EventIn) -> dict:

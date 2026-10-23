@@ -55,6 +55,8 @@ def test_bad_input_is_rejected(tmp_path):
     assert client.post("/api/events", json={**backwards, "end": "2026-10-23T16:00", "kind": "party"}).status_code == 422
     assert client.post("/api/events", json={**backwards, "title": "", "end": "2026-10-23T16:00"}).status_code == 422
     assert client.patch("/api/events/999", json={"title": "Y"}).status_code == 404
+    backwards_range = {"start": "2026-10-26T00:00", "end": "2026-10-19T00:00"}
+    assert client.get("/api/events", params=backwards_range).status_code == 422
 
 
 def test_times_with_a_time_zone_become_local(tmp_path):
