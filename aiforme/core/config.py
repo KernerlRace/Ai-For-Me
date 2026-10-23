@@ -8,8 +8,9 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def data_dir() -> Path:
-    """`AIFORME_DATA_DIR` if set, else `data/` in the repository."""
-    return Path(os.environ.get("AIFORME_DATA_DIR") or ROOT / "data")
+    """`AIFORME_DATA_DIR` if set (`~` is expanded), else `data/` in the repository."""
+    custom = os.environ.get("AIFORME_DATA_DIR")
+    return Path(custom).expanduser() if custom else ROOT / "data"
 
 
 def bus_path() -> Path:
