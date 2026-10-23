@@ -108,6 +108,17 @@ def test_unknown_consumer(bus):
         bus.complete("nobody", event)
 
 
+def test_recent_filters_keeps_order_and_moves_no_cursor(bus):
+    bus.subscribe("c", ["*"])
+    for n in range(5):
+        bus.publish(Event("mode.changed" if n % 2 else "voice.transcribed", {"n": n}))
+    assert [e.payload["n"] for e in bus.recent(3)] == [2, 3, 4]               # the last ones, oldest first
+    assert [e.payload["n"] for e in bus.recent(pattern="mode.*")] == [1, 3]
+    assert bus.recent(1, "mode.changed")[0].payload == {"n": 3}
+    assert len(bus.poll("c")) == 5                                          # still all pending
+    with pytest.raises(ValueError):
+        bus.recent(pattern="Mode")
+
 def test_two_processes_share_one_file(tmp_path):
     path = tmp_path / "bus.sqlite3"
     with EventBus(path) as producer, EventBus(path) as consumer:
