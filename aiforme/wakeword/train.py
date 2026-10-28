@@ -4,8 +4,8 @@
     python -m aiforme.wakeword.train --no-recorded    # Windows voices only, for comparison
 
 Training data: the synthetic clips and the `train` recordings, split by file into fit (85%) and validation
-(15%). Two rounds: the first model is run over the training room audio, the windows it mistakes for the wake word
-are added as hard negatives, and a second model is trained from scratch on everything. The threshold is the
+(15%). Two rounds: the first model is run over the training room audio and the other phrases, the windows it
+mistakes for the wake word are added as hard negatives, and a second model is trained from scratch on everything. The threshold is the
 lowest at which the held-out real audio — room recordings and my other phrases, streamed as the detector hears
 them — never fires; how often the synthetic phrases fire at it is reported alongside. Trains on the GPU if any.
 The `test` recordings — another session — are never touched until the end, and are scored by streaming
@@ -104,8 +104,13 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = T
     model, mean, std = _fit(X, y, epochs, seed)
     rounds.append(_validate(model, mean, std, synth_val, recorded_val, "round 1"))
     if mine and clips_fit["ambient"]:
-        # hard negatives: the windows of the training room audio that the first model mistakes for the word
-        hard = _mine(model, mean, std, clips_fit["ambient"], Augmenter(noise, rng))
+        # hard negatives: the windows of the training room audio and of the other phrases that the first model
+        # mistakes for the word. The phrases matter for a new voice: three random windows per phrase are few next to
+        # fifteen per wake word, and v3 fired on 23 of 60 plain commands said by a second speaker. Each source has
+        # its own cap: in one pool a voice the model has not learned yet fills it, and the room goes unmined
+        aug = Augmenter(noise, rng)
+        hard = np.concatenate([_mine(model, mean, std, clips_fit["ambient"], aug),
+                               _mine(model, mean, std, clips_fit["negative"], aug)])
         print(f"hard negatives: {len(hard)} windows", flush=True)
         X = np.concatenate([X, hard])
         y = np.concatenate([y, np.zeros(len(hard), np.float32)])
@@ -241,10 +246,10 @@ def _validate(model, mean, std, synth_val, recorded_val, name: str) -> dict:
     return out
 
 
-def _mine(model, mean, std, ambient: list[np.ndarray], aug, min_p: float = 0.1, cap: int = 4000) -> np.ndarray:
-    """Features of the highest-scoring room-audio windows, each once as it is and once augmented."""
+def _mine(model, mean, std, clips: list[np.ndarray], aug, min_p: float = 0.1, cap: int = 4000) -> np.ndarray:
+    """Features of the highest-scoring windows of negative audio, each once as it is and once augmented."""
     found = []
-    for clip in ambient:
+    for clip in clips:
         probs = stream_probs(model, mean, std, clip)
         padded = np.concatenate([np.zeros(WINDOW - HOP, np.float32), clip])
         found += [(p, padded, k) for k, p in enumerate(probs) if p >= min_p]
