@@ -6,10 +6,11 @@ app on one port, http://127.0.0.1:8765 — local only, no accounts.
 | Page | What it shows |
 |---|---|
 | Calendar | Day, week and month views in Russian; drag over empty time to create, drag or stretch to move, click to edit; events coloured by kind — meeting, shift, other |
+| Commands | Every command the assistant heard and what it understood; mark it right or correct it, retrain the intent classifier on the labels, and follow its accuracy by version — [active learning](../active_learning) |
 | Header | The mode the [autopilot](../mode_autopilot) is in, and why on hover |
 
-Planned as their phases land: the log of what the assistant did and why, corrections for the active-learning loop,
-finance and learning widgets, security alerts.
+Planned as their phases land: the log of what the assistant did and why, finance and learning widgets, security
+alerts.
 
 ```bash
 cd aiforme/dashboard/web
@@ -20,4 +21,5 @@ uv run python -m aiforme dashboard
 ```
 
 `npm run dev` serves the frontend with hot reload on :5173 and proxies `/api` to the backend. The API is documented at
-`/api/docs`; every calendar change is also published on the bus as `calendar.changed`.
+`/api/docs`; every calendar change is also published on the bus as `calendar.changed`. `--embedder` picks what the
+Retrain button trains — the assistant's own, e5, by default.

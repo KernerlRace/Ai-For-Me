@@ -6,7 +6,10 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 2 under way — the [mode autopilot](aiforme/mode_autopilot) switches the machine between normal,
+> **Status:** Phase 3 under way — [active learning](aiforme/active_learning): commands the assistant heard are
+> labelled on the dashboard, retrain the intent classifier, and a new version replaces the running one only if it
+> loses at most one held-out test phrase and does at least as well on the labelled commands, scored out of fold.
+> Phase 2 is running — the [mode autopilot](aiforme/mode_autopilot) switches the machine between normal,
 > coding, gaming and meeting modes on its own, with its own calendar and the first page of the
 > [dashboard](aiforme/dashboard) (FastAPI + React); the learned mode model waits for weeks of activity data.
 > Phase 1 is done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
@@ -83,11 +86,12 @@ Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · 
 | `aiforme/core/memory.py` | Basic long-term memory: JSON values under (namespace, key) |
 | `aiforme/voice_orchestrator/` | Phase 1: listener, Whisper, intent classifier, Windows actions — [its README](aiforme/voice_orchestrator/README.md) has the results |
 | `aiforme/mode_autopilot/` | Phase 2: activity sampling, mode rules, what each mode does, the activity log |
+| `aiforme/active_learning/` | Phase 3: labels on heard commands, gated retraining, model versions — [its README](aiforme/active_learning/README.md) |
 | `aiforme/calendar/` | The assistant's own calendar and the watcher that announces events on the bus |
-| `aiforme/dashboard/` | Local web UI: FastAPI backend, React + Vite + FullCalendar frontend in `web/` |
+| `aiforme/dashboard/` | Local web UI: the calendar and the commands page; FastAPI backend, React + Vite frontend in `web/` |
 | `aiforme/wakeword/` | Own wake-word model: recording tool, synthetic data, augmentation, CNN training, ONNX detector |
 | `eval/results/` | Every evaluation as JSON, including each test error |
-| `aiforme/__main__.py` | Command line: `run` the assistant, `say` a typed command, publish and tail events |
+| `aiforme/__main__.py` | Command line: `run` the assistant, `say` a typed command, `retrain`, publish and tail events |
 | `tests/` | pytest suite, run in CI on Windows and Linux |
 | `ROADMAP.md` | Full plan: ML approach per module, architecture, tech stack, phased build order |
 | `modules/` | READMEs of the modules not started yet; a started module moves into `aiforme/` |

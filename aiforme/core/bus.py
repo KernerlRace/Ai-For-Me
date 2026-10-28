@@ -105,6 +105,13 @@ class EventBus:
         ).fetchall()
         return [_row_to_event(r) for r in reversed(rows)]
 
+    def get(self, event_id: int) -> Event | None:
+        """One event by id, or None; for inspection, like `recent`."""
+        row = self._conn.execute(
+            "SELECT id, topic, payload, source, created_at FROM events WHERE id = ?", (event_id,)
+        ).fetchone()
+        return _row_to_event(row) if row else None
+
     def _insert(self, event: Event) -> Event:
         cur = self._conn.execute(
             "INSERT INTO events (topic, payload, source, created_at) VALUES (?, ?, ?, ?)",

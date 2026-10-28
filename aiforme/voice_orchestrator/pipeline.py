@@ -1,6 +1,7 @@
 """The voice orchestrator as bus modules: text → intent → action → spoken reply.
 
     voice.transcribed / text.command ─▶ voice_intent ─▶ intent.recognized / intent.unknown
+    intent.model_updated ─▶ voice_intent (reloads the classifier a retraining accepted, aiforme/active_learning)
     intent.* ─▶ voice_actions ─▶ action.done / action.failed (+ assistant.reply, mode.requested)
     assistant.reply ─▶ voice_reply (prints, and speaks through Windows' built-in voices)
 
@@ -39,19 +40,26 @@ def _stale(event: Event) -> bool:
 
 
 class IntentModule(Module):
+    """Every intent event names the model version behind it, so a label given in the dashboard later says which
+    version was right or wrong. `reload` builds the current version again, for `intent.model_updated`."""
     name = "voice_intent"
-    subscribes = ("voice.transcribed", "text.command")
+    subscribes = ("voice.transcribed", "text.command", "intent.model_updated")
 
-    def __init__(self, classifier: IntentClassifier):
-        self.classifier = classifier
+    def __init__(self, classifier: IntentClassifier, version: int = 0,
+                 reload: Callable[[], tuple[IntentClassifier, int]] | None = None):
+        self.classifier, self.version, self.reload = classifier, version, reload
 
     def handle(self, event: Event):
+        if event.topic == "intent.model_updated":
+            if self.reload:         # a few seconds; commands said meanwhile wait in the queue
+                self.classifier, self.version = self.reload()
+            return
         text = str(event.payload.get("text", "")).strip()
         if not text or _stale(event):
             return
         parse = self.classifier.predict_one(text)
         payload = {"text": text, "intent": parse.intent, "confidence": round(parse.confidence, 3),
-                   "slots": parse.slots, "language": language(text)}
+                   "slots": parse.slots, "language": language(text), "model": self.version}
         if parse.intent == OUT_OF_SCOPE:
             yield Event("intent.unknown", {**payload, "best_guess": parse.best_guess})
         else:

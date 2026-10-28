@@ -41,34 +41,13 @@ def evaluate(embedder: str, device: str | None = None) -> dict:
     t0 = time.perf_counter()
     parses = [clf.predict_one(e.text) for e in test]  # one at a time, as the assistant will call it
     latency_ms = (time.perf_counter() - t0) / len(test) * 1000
-
-    gold = np.array([e.intent for e in test])
-    pred = np.array([p.intent for p in parses])
-    langs = np.array([language(e.text) for e in test])
-    in_scope = gold != OUT_OF_SCOPE
-
-    def acc(mask):
-        return float(np.mean(pred[mask] == gold[mask])) if mask.any() else None
-
-    slot_rows = [(e, p) for e, p in zip(test, parses, strict=True) if INTENTS.get(e.intent)]
-    slot_ok = [p.intent == e.intent and _slot(p, e) == normalize(e.slots[INTENTS[e.intent]])
-               for e, p in slot_rows]
-    slot_given_intent = [ok for ok, (e, p) in zip(slot_ok, slot_rows, strict=True) if p.intent == e.intent]
-
     report = {
         "embedder": embedder,
         "train_examples": len(train),
         "test_examples": len(test),
         "threshold": clf.threshold,
         "cv_on_train": clf.cv_report,
-        "accuracy": acc(np.ones_like(in_scope)),
-        "in_scope_accuracy": acc(in_scope),
-        "in_scope_accuracy_ru": acc(in_scope & (langs == "ru")),
-        "in_scope_accuracy_en": acc(in_scope & (langs == "en")),
-        "oos_recall": acc(~in_scope),
-        "false_rejections": float(np.mean(pred[in_scope] == OUT_OF_SCOPE)),
-        "slot_end_to_end": float(np.mean(slot_ok)),
-        "slot_given_intent": float(np.mean(slot_given_intent)) if slot_given_intent else None,
+        **score(test, parses),
         "fit_seconds": round(fit_s, 2),
         "latency_ms": round(latency_ms, 2),
         "errors": [
@@ -83,6 +62,33 @@ def evaluate(embedder: str, device: str | None = None) -> dict:
     (RESULTS / f"intent_{embedder}.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return report
+
+
+def score(test: list, parses: list) -> dict:
+    """Intent and slot metrics of `parses` against the labelled `test` examples, in the same order."""
+    gold = np.array([e.intent for e in test])
+    pred = np.array([p.intent for p in parses])
+    langs = np.array([language(e.text) for e in test])
+    in_scope = gold != OUT_OF_SCOPE
+
+    def acc(mask):
+        return float(np.mean(pred[mask] == gold[mask])) if mask.any() else None
+
+    slot_rows = [(e, p) for e, p in zip(test, parses, strict=True) if INTENTS.get(e.intent)]
+    slot_ok = [p.intent == e.intent and _slot(p, e) == normalize(e.slots[INTENTS[e.intent]])
+               for e, p in slot_rows]
+    slot_given_intent = [ok for ok, (e, p) in zip(slot_ok, slot_rows, strict=True) if p.intent == e.intent]
+
+    return {
+        "accuracy": acc(np.ones_like(in_scope)),
+        "in_scope_accuracy": acc(in_scope),
+        "in_scope_accuracy_ru": acc(in_scope & (langs == "ru")),
+        "in_scope_accuracy_en": acc(in_scope & (langs == "en")),
+        "oos_recall": acc(~in_scope),
+        "false_rejections": float(np.mean(pred[in_scope] == OUT_OF_SCOPE)) if in_scope.any() else None,
+        "slot_end_to_end": float(np.mean(slot_ok)) if slot_ok else None,
+        "slot_given_intent": float(np.mean(slot_given_intent)) if slot_given_intent else None,
+    }
 
 
 def _slot(parse, example) -> str:
