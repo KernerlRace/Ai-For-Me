@@ -71,25 +71,30 @@ was scored once per model; nothing was tuned on it.</sub>
 «Амадеус» — the AI in Steins;Gate 0. The detector is a 60k-parameter CNN over 1.5 s of log-mel features, trained from
 scratch ([aiforme/wakeword](../wakeword)) on 200 recordings of my voice saying it in ten different ways (quiet, from two
 metres, followed by a command, ...), 97 recordings of other phrases and similar-sounding words (*Амадей, Асмодей,
-Мадейра*), 70 minutes of my room — videos, games, talk, coughs — and 105 + 526 clips from the Windows voices. Every clip
+Мадейра*), 70 minutes of my room — videos, games, talk, coughs — and 105 + 526 clips from the Windows voices. Since v4
+also on a second speaker: 100 takes, 60 phrases and 10 minutes of her room, recorded on a MacBook with
+[tools/mac_recorder](../../tools/mac_recorder). Every clip
 is augmented: tempo ±10%, a synthetic room, gain, noise from the room recordings at 3–30 dB SNR. Windows that end inside
 the word (*«Ама…»*) are negatives, so it waits for the whole word. Training runs in two rounds: the first model is
-streamed over the 60 training minutes of room audio, the ~900 windows it mistakes for the word become hard negatives,
-and a second model is trained from scratch with them. On an RTX 3060 Ti both rounds take three minutes.
+streamed over the training room audio and the other phrases, the windows it mistakes for the word become hard
+negatives — up to 2000 windows from each, each also once augmented, 4866 in all — and a second model is trained from scratch with them. On an RTX 3060 Ti both rounds take three minutes.
 
 Everything is scored by streaming audio through the exported ONNX model exactly as the assistant runs it
 (`eval/results/wakeword*.json`): validation is 15% of the training recordings, held out by file; the test is a separate
 session recorded on another day — 50 takes and 10 minutes of a different video playing.
 
-| | v1: 10 min of room audio | v3: 70 min + hard negatives |
-|---|---|---|
-| Validation: wake words found, 30 takes | 29 (96.7%) | **30 (100%)** |
-| Validation: false accepts, 10 min of held-out room audio | 6 (≈36 an hour) | **0** |
-| Test: wake words found, 50 takes | 42 (84%) | **45 (90%)** |
-| Test: false accepts, 10 min | 2 (≈12 an hour) | **0** |
-| Threshold | 0.977 | 0.97 |
+| | v1: 10 min of room audio | v3: 70 min + hard negatives | v4: + a second voice, phrases mined |
+|---|---|---|---|
+| Validation: wake words found | 29 of 30 (96.7%) | **30 of 30 (100%)** | **45 of 45 (100%)** |
+| Validation: false accepts in held-out room audio | 6 in 10 min (≈36 an hour) | **0** in 10 min | **0** in 12 min |
+| Validation: held-out phrases it fires on | — | 0 of 15 | 0 of 24 |
+| Test: wake words found, 50 takes | 42 (84%) | **45 (90%)** | 44 (88%) |
+| Test: false accepts, 10 min | 2 (≈12 an hour) | **0** | **0** |
+| Synthetic phrases it fires on, of 79 | — | 2 | **0** |
+| Threshold | 0.977 | 0.97 | 0.98 |
 
-<sub>Validation for both models uses the same held-out takes and only room audio from the sessions recorded after v1,
+<sub>v4's validation adds the second speaker's held-out files to the same split, so it is not the same set as v3's.
+Validation for v1 and v3 uses the same held-out takes and only room audio from the sessions recorded after v1,
 which neither model trained on. The v1 test result was looked at — its errors are what motivated recording more room
 audio and mining it — but nothing was tuned on the test audio itself.</sub>
 
@@ -108,10 +113,17 @@ What changed, and what each step bought:
   the microphone hears, and holding the threshold above them cost real recall for no fewer false accepts in the room.
   The threshold is now the lowest at which the held-out room audio and my recorded phrases never fire; 2 of 79
   synthetic phrases fire at it, reported rather than obeyed.
+- **A second voice broke v3.** On a friend's recordings, which it had never heard, v3 found 85 of 100 wake words, fired
+  on 21 of 60 plain commands (*«sound off»*, *«звук погромче»*) and 5 times in 10 minutes of her room: it had learned
+  my voice more than the word. Simply adding her recordings made it worse — 78% on my test, the threshold pinned at
+  0.999 by her phrases — because a wake-word take gives 15 training windows and a phrase only 3, so her voice itself
+  looked like the wake word. Mining the phrases as well as the room fixed it; with one shared cap her phrases took all
+  4000 places and the room went unmined (1 false accept on the test), so each source has its own.
 
-Limits. All five test misses are whispered — 5 of 10 whispers found, 40 of 40 of everything else. Zero false accepts
-in 20 minutes of held-out audio says the rate is probably below about 9 an hour (the rule of three), not that it is
-below one; that needs hours of test audio. And it has only heard one voice — a second speaker's test session is next.
+Limits. All test misses are whispered — v4 finds 4 of 10 whispers (v3: 5) and 40 of 40 of everything else. Zero false
+accepts in 22 minutes of held-out audio says the rate is probably below about 8 an hour (the rule of three), not that it
+is below one; that needs hours of test audio. On the second voice v4 finds 97 of 100 and fires on none of her phrases,
+but those are mostly its training files — her own test session, on another day, is what will measure it.
 In live use it woke on «Амадеус» and carried out the commands, Whisper taking 0.6–0.8 s per command once warm.
 
 One finding on the way: the microphone suppresses noise, so its silence is near digital zero. Thresholds measured

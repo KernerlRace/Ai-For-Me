@@ -1,38 +1,38 @@
 {
- "threshold": 0.97,
+ "threshold": 0.98,
  "consecutive": 2,
  "refractory_s": 1.5,
  "trained_on_recordings": true,
  "parameters": 60465,
  "epochs": 25,
- "fit_windows": 17635,
- "fit_ambient_minutes": 60.0,
+ "fit_windows": 24403,
+ "fit_ambient_minutes": 68.0,
  "rounds": [
   {
    "threshold": 0.999,
-   "val_recall": 0.9666666666666667,
-   "val_room_minutes": 10.0,
-   "val_recorded_phrases_fired": "0 of 15",
+   "val_recall": 0.9777777777777777,
+   "val_room_minutes": 12.0,
+   "val_recorded_phrases_fired": "2 of 24",
    "val_synthetic_phrases_fired": "0 of 79"
   },
   {
-   "threshold": 0.97,
+   "threshold": 0.98,
    "val_recall": 1.0,
-   "val_room_minutes": 10.0,
-   "val_recorded_phrases_fired": "0 of 15",
-   "val_synthetic_phrases_fired": "2 of 79",
-   "hard_negatives": 892
+   "val_room_minutes": 12.0,
+   "val_recorded_phrases_fired": "0 of 24",
+   "val_synthetic_phrases_fired": "0 of 79",
+   "hard_negatives": 4866
   }
  ],
  "val_streaming": {
   "recall": 1.0,
-  "positives": 30,
+  "positives": 45,
   "false_accepts": 0,
-  "ambient_minutes": 10.0,
+  "ambient_minutes": 12.0,
   "false_accepts_per_hour": 0.0
  },
  "test": {
-  "recall": 0.9,
+  "recall": 0.88,
   "positives": 50,
   "false_accepts": 0,
   "ambient_minutes": 10.0,

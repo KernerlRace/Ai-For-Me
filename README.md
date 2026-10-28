@@ -11,7 +11,7 @@ A personal AI layer for my own machine: a voice-controlled orchestrator that als
 > [dashboard](aiforme/dashboard) (FastAPI + React); the learned mode model waits for weeks of activity data.
 > Phase 1 is done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
 > Whisper on the GPU, intent recognition in Russian and English (92.4% on held-out phrases, 90.0% through speech) and
-> 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings with hard-negative mining (90% of wake words in a separate test session, no false accepts in 20 minutes of held-out audio). Phase 0 — the event
+> 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings and a second speaker's, with hard-negative mining (88% of wake words in a separate test session — all misses whispered — and no false accepts in 22 minutes of held-out audio). Phase 0 — the event
 > bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
 > phased build order are written up in [ROADMAP.md](ROADMAP.md).
 
