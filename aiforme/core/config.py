@@ -31,3 +31,7 @@ def modes_path() -> Path:
 
 def activity_path() -> Path:
     return data_dir() / "activity.sqlite3"
+
+
+def feedback_path() -> Path:
+    return data_dir() / "feedback.sqlite3"

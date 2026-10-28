@@ -11,6 +11,9 @@
   --shift: #16a34a;
   --other: #6b7280;
   --shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  --series-1: #2a78d6;     /* chart lines, validated against the surface (dataviz palette slots 1–2) */
+  --series-2: #eb6834;
+  --ok: #15803d;
   color-scheme: light;
 }
 
@@ -28,6 +31,9 @@
     --shift: #4ade80;
     --other: #9ca3af;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --ok: #4ade80;
     color-scheme: dark;
   }
 }
@@ -135,3 +141,69 @@ button {
 button:disabled { opacity: 0.6; cursor: default; }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 button.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+
+/* the commands page */
+.page.scroll { overflow-y: auto; gap: 16px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+code { font-size: 12px; }
+.cards { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); gap: 16px; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+.card h3 { margin: 0 0 12px; font-size: 15px; }
+.stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.stats div { display: flex; align-items: baseline; gap: 10px; }
+.stats strong { font-size: 22px; min-width: 70px; font-variant-numeric: tabular-nums; }
+.stats span { color: var(--muted); font-size: 13px; }
+.outcome { margin: 12px 0 0; font-size: 13px; }
+.outcome.ok { color: var(--ok); }
+.outcome.bad { color: var(--danger); }
+
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .crosshair { stroke: var(--muted); stroke-width: 1; }
+.chart .tick { fill: var(--muted); font-size: 11px; }
+.chart .end-label { fill: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.legend i, .tooltip i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+.tooltip {
+  position: absolute; top: 24px; pointer-events: none; white-space: nowrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+  box-shadow: var(--shadow); font-size: 12px; display: flex; flex-direction: column; gap: 3px;
+}
+.tooltip strong { font-variant-numeric: tabular-nums; }
+
+.commands { list-style: none; margin: 0; padding: 0; }
+.command {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 6px 16px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--border);
+}
+.command:first-child { border-top: none; }
+@media (max-width: 720px) { .command { grid-template-columns: 1fr; } }
+.said { display: flex; flex-direction: column; min-width: 0; }
+.said .when { color: var(--muted); font-size: 12px; }
+.said .text { overflow-wrap: anywhere; }
+.parse { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 13px; }
+.parse .intent { font-weight: 500; }
+.parse .was { color: var(--muted); text-decoration: line-through; }
+.command.corrected .intent { color: var(--accent); }
+.command.confirmed .intent { color: var(--ok); }
+.row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; font-size: 13px; }
+.row-actions button { padding: 4px 10px; font-size: 13px; }
+.correction {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+  padding: 10px; border-radius: 8px; background: var(--bg);
+}
+.row-error { grid-column: 1 / -1; font-size: 13px; }
+.correction label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+.correction select, .correction input {
+  font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; min-width: 200px;
+}
+
+.history { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.history th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.history td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.history tr.rejected td { color: var(--muted); }
+.card:has(.history) { overflow-x: auto; }
