@@ -5,12 +5,12 @@
 
 Training data: the synthetic clips and the `train` recordings, split by file into fit (85%) and validation
 (15%). Two rounds: the first model is run over the training room audio and the other phrases, the windows it
-mistakes for the wake word are added as hard negatives, and a second model is trained from scratch on everything. The threshold is the
-lowest at which the held-out real audio — room recordings and my other phrases, streamed as the detector hears
-them — never fires; how often the synthetic phrases fire at it is reported alongside. Trains on the GPU if any.
-The `test` recordings — another session — are never touched until the end, and are scored by streaming
-them through the exported model exactly as the assistant does: recall over the test takes of the wake word,
-false accepts per hour over the test room recording.
+mistakes for the wake word are added as hard negatives, and a second model is trained from scratch on everything.
+The threshold is the lowest at which the held-out real audio — room recordings and my other phrases, streamed as
+the detector hears them — never fires; how often the synthetic phrases fire at it is reported alongside. Trains on
+the GPU if any. The `test` recordings — another session — are never touched until the end, and are scored by
+streaming them through the exported model exactly as the assistant does: recall over the test takes of the wake
+word, false accepts per hour over the test room recording.
 """
 from __future__ import annotations
 
