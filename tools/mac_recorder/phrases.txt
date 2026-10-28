@@ -1,0 +1,314 @@
+открой телеграм
+открой хром
+запусти стим
+запусти дискорд
+открой мне спотифай
+открой пожалуйста блокнот
+можешь открыть калькулятор
+включи вс код
+запусти пожалуйста обс
+открой проводник
+мне нужен ворд
+открой браузер
+запусти игру дота
+открой настройки
+открой steam
+запусти chrome
+open telegram
+open chrome
+launch steam
+start discord
+open spotify please
+can you open the calculator
+run vs code
+open notepad
+fire up obs
+open file explorer
+open word
+start the browser
+launch dota
+open settings
+закрой телеграм
+закрой хром
+выключи стим
+закрой дискорд
+закрой пожалуйста спотифай
+закрой блокнот
+выйди из дискорда
+убей процесс хром
+закрой вс код
+останови обс
+закрой калькулятор
+закрой браузер
+закрой steam
+close telegram
+close chrome
+quit steam
+exit discord
+close spotify please
+kill notepad
+close vs code
+stop obs
+close the calculator
+close the browser
+quit word
+close settings
+найди файл отчет
+найди файл резюме
+где лежит презентация по истории
+найди документ курсовая
+найди папку проекты
+поищи файл бюджет
+найди на компьютере фотки с моря
+где мой файл договор
+найди скриншот ошибки
+открой файл диплом
+найди pdf с билетами
+find the file report
+find my resume
+where is the history presentation
+search my computer for budget
+find the folder projects
+locate the contract file
+find photos from the beach
+open the file thesis
+find the screenshot of the error
+where did i save the invoice
+find the pdf with tickets
+напиши привет как дела
+напечатай я буду через десять минут
+введи текст встречаемся у входа
+напиши спасибо большое
+набери ок договорились
+напиши сообщение скоро буду
+напечатай текст созвонимся вечером
+запиши под диктовку купить хлеб и молоко
+напиши пожалуйста доброе утро
+type hello how are you
+write i'll be there in ten minutes
+type the text see you at the entrance
+dictate thanks a lot
+write ok sounds good
+type message running late
+enter the text meeting at noon
+take dictation buy bread and milk
+please type good morning
+загугли погода в лондоне
+найди в интернете рецепт борща
+поищи в гугле как установить питон
+погугли курс доллара
+найди в браузере расписание поездов
+что такое трансформер в машинном обучении
+поиск в интернете новости
+загугли в каком году основан рим
+google weather in london
+search the web for borscht recipe
+look up how to install python
+search google for dollar exchange rate
+what is a transformer in machine learning
+search online for train timetable
+look up latest news
+google in which year rome was founded
+сделай громче
+прибавь звук
+громче
+увеличь громкость
+звук погромче
+подними громкость
+погромче пожалуйста
+volume up
+louder
+turn it up
+increase the volume
+make it louder
+raise the volume
+turn the sound up
+сделай тише
+убавь звук
+тише
+уменьши громкость
+потише пожалуйста
+понизь громкость
+звук потише
+volume down
+quieter
+turn it down
+lower the volume
+decrease the volume
+make it quieter
+turn the sound down
+выключи звук
+без звука
+замьють
+отключи звук
+тишина
+включи звук обратно
+mute
+mute the sound
+unmute
+turn off the sound
+silence
+sound off
+пауза
+поставь на паузу
+продолжи воспроизведение
+включи музыку
+останови музыку
+сними с паузы
+pause
+pause the music
+play
+resume playback
+play music
+stop the music
+unpause
+следующий трек
+дальше
+переключи песню
+следующая песня
+пропусти трек
+некст
+next track
+skip
+next song
+skip this song
+play the next one
+skip track
+сделай скриншот
+скрин экрана
+сфоткай экран
+снимок экрана
+заскринь
+сохрани скриншот
+take a screenshot
+screenshot
+capture the screen
+grab the screen
+screen capture
+save a screenshot
+заблокируй компьютер
+заблокируй экран
+блокировка
+я отошел заблокируй
+заблокируй пк
+lock the computer
+lock screen
+lock my pc
+lock it
+i'm stepping away lock the screen
+lock windows
+который час
+сколько времени
+скажи время
+сколько сейчас времени
+какое сейчас время
+который сейчас час
+what time is it
+what's the time
+tell me the time
+current time
+time please
+do you know what time it is
+отмена
+ничего
+отбой
+забудь
+не надо
+стоп отмена
+я передумал
+cancel
+never mind
+nothing
+forget it
+stop
+no thanks
+i changed my mind
+включи игровой режим
+игровой режим
+переключись в режим кодинга
+рабочий режим
+режим встречи
+включи режим созвона
+верни обычный режим
+обычный режим
+автоматический режим
+я сажусь играть
+я буду программировать
+gaming mode
+switch to gaming mode
+turn on coding mode
+work mode
+meeting mode
+start call mode
+back to normal mode
+normal mode please
+automatic mode
+i'm going to play
+time to code
+что у меня сегодня
+какие планы на сегодня
+что в календаре
+расписание на сегодня
+есть ли у меня встречи сегодня
+что у меня по плану
+what's on my calendar today
+what do i have today
+any meetings today
+show my schedule
+what's my agenda
+what's next on my calendar
+поставь паузу на видео
+останови видео
+стоп видео
+включи видео
+продолжи видео
+продолжу видео
+видео на паузу
+запусти видео дальше
+паузу
+pause the video
+stop the video
+resume the video
+play the video
+сделай видео потише
+видео потише
+убавь видео
+сделай видео погромче
+видео громче
+turn the video down
+turn the video up
+выключи звук на видео
+закрой калькулятор пожалуйста
+закажи пиццу
+поставь будильник на семь
+расскажи анекдот
+как тебя зовут
+выключи компьютер
+перезагрузи компьютер
+позвони маме
+отправь письмо начальнику
+включи свет в комнате
+привет
+спасибо
+ты меня слышишь
+напомни купить молоко
+переведи слово кошка
+мне скучно
+order a pizza
+set an alarm for seven
+tell me a joke
+what's your name
+shut down the computer
+restart the pc
+call mom
+send an email to my boss
+turn on the lights
+hello
+thank you
+can you hear me
+remind me to buy milk
+translate cat to spanish
+i'm bored
+сделай мне бутерброд
+ты глупая
+do you hear me
