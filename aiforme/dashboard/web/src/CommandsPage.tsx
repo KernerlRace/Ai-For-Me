@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   INTENT_LABELS, SLOT_LABELS, learningApi,
-  type Command, type Learning, type Slots, type Version,
+  type Command, type CommandOrder, type Learning, type Slots, type Version,
 } from "./api";
 import { AccuracyChart, type AccuracyPoint } from "./AccuracyChart";
 
@@ -16,17 +16,18 @@ export function CommandsPage() {
   const [commands, setCommands] = useState<Command[]>([]);
   const [learning, setLearning] = useState<Learning | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [order, setOrder] = useState<CommandOrder>("uncertain");
 
   const load = useCallback(async () => {
     try {
-      const [cmds, state] = await Promise.all([learningApi.commands(), learningApi.state()]);
+      const [cmds, state] = await Promise.all([learningApi.commands(order), learningApi.state()]);
       setCommands(cmds);
       setLearning(state);
       setError(null);
     } catch (e) {
       setError(`Не удалось загрузить команды: ${e instanceof Error ? e.message : e}`);
     }
-  }, []);
+  }, [order]);
 
   useEffect(() => {
     load();
@@ -58,7 +59,21 @@ export function CommandsPage() {
       </div>
 
       <div className="card">
-        <h3>Команды</h3>
+        <div className="card-head">
+          <h3>Команды</h3>
+          <div className="toggle" role="group" aria-label="Порядок команд">
+            {(["uncertain", "recent"] as const).map((o) => (
+              <button key={o} className={o === order ? "active" : ""} aria-pressed={o === order}
+                      onClick={() => setOrder(o)}>
+                {o === "uncertain" ? "Сначала спорные" : "По времени"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {order === "uncertain" && commands.length > 0 && (
+          <p className="muted small hint">Сверху — неразмеченные команды, где уверенность модели ближе всего к порогу:
+            метка на них учит её больше всего.</p>
+        )}
         {commands.length === 0 && (
           <p className="muted">Пока пусто: скажите ассистенту что-нибудь или отправьте
             <code> python -m aiforme say "открой телеграм"</code>.</p>
@@ -110,23 +125,36 @@ function Overview({ learning, pending, onRetrain }: { learning: Learning; pendin
         </button>
         {pending === 0 && !learning.retraining && <span className="muted">Нужна хотя бы одна новая метка.</span>}
       </div>
+      {learning.auto.every > 0 && !learning.retraining && (
+        <p className="muted small">Само переобучится через {Math.max(learning.auto.every - learning.auto.new, 0)}
+          {" "}{plural(learning.auto.every - learning.auto.new, "метку", "метки", "меток")}
+          {" "}({learning.auto.new} из {learning.auto.every} с прошлого раза).</p>
+      )}
       {learning.error && <p className="error">Переобучение упало: {learning.error}</p>}
-      {last && !learning.retraining && <Outcome version={last} />}
+      {last && !learning.retraining && <Outcome version={last} automatic={learning.automatic} />}
     </div>
   );
 }
 
-function Outcome({ version: v }: { version: Version }) {
+/** «1 метку», «2 метки», «5 меток». */
+function plural(n: number, one: string, few: string, many: string) {
+  const d = Math.abs(n) % 100, u = d % 10;
+  if (d > 10 && d < 20) return many;
+  return u === 1 ? one : u >= 2 && u <= 4 ? few : many;
+}
+
+function Outcome({ version: v, automatic }: { version: Version; automatic: boolean }) {
   if (v.id === 0) return null;
   const m = v.metrics;
+  const how = automatic ? " (само, по числу меток)" : "";
   const reasons = [];
   if (m.test_ok === false) reasons.push(`теряет ${m.test_phrases_lost} тестовых фраз (можно не больше одной)`);
   if (m.real_ok === false) reasons.push(`на моих командах хуже: ${pct(m.real_before?.accuracy)} → ${pct(m.real?.accuracy)}`);
   return v.accepted ? (
-    <p className="outcome ok">✓ Версия {v.id} принята: {v.new_labels} меток, тестовые фразы {pct(m.test_before?.accuracy)} →
+    <p className="outcome ok">✓ Версия {v.id} принята{how}: {v.new_labels} меток, тестовые фразы {pct(m.test_before?.accuracy)} →
       {" "}{pct(m.test.accuracy)}, мои команды {pct(m.real_before?.accuracy)} → {pct(m.real?.accuracy)}.</p>
   ) : (
-    <p className="outcome bad">✕ Версия {v.id} отклонена: {reasons.join("; ")}. Метки остались —
+    <p className="outcome bad">✕ Версия {v.id} отклонена{how}: {reasons.join("; ")}. Метки остались —
       проверьте исправления и отмените ошибочные.</p>
   );
 }

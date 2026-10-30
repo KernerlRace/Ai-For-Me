@@ -22,8 +22,9 @@ flowchart LR
    and, for intents that take one, the slot as words of the command (*«раскочегарь дискорд»* → open app
    *«дискорд»*). Both kinds are labels: a confirmed command is as much a real, transcribed training example as a
    corrected one. A label stays pending, and can be changed or undone, until a version trains on it.
-3. **Retrain** (the button, or `python -m aiforme retrain`) builds a candidate from the hand-written commands plus
-   every label and compares it with the current version.
+3. **Retrain** builds a candidate from the hand-written commands plus every label and compares it with the current
+   version. It starts on its own once 20 labels have gathered since the last attempt, accepted or not — a rejected
+   candidate is not retried on the same labels — or by the page's button, or `python -m aiforme retrain`.
 4. Accepted, it becomes the next version; the running assistant reloads it on `intent.model_updated`, without a
    restart. Rejected, it is recorded with its numbers, and the labels wait — a wrong one can be found and undone.
 
@@ -56,6 +57,14 @@ The gate also catches what it should. With the TF-IDF baseline the *«вруба
 Relabelling *«открой X»* / *«запусти X»* as mute sixteen times passes the second check (the labels agree with each
 other) and fails the first, losing three test phrases.
 
+## What to label first
+
+The list opens on **«Сначала спорные»**: unlabelled commands closest to the out-of-scope threshold come first —
+uncertainty sampling, the classic active-learning query. Every intent event carries the threshold it was judged
+against, so the margin is exact even after the threshold has been carried to a new version. A command decided with
+0.97 confidence and confirmed teaches the model little; *«раскочегарь дискорд»* at 0.21 against a threshold of
+0.28 — rejected by a hair — is exactly the label it is missing. **«По времени»** shows everything newest first.
+
 ## On the dashboard
 
 The page shows the current version and its accuracy on the commands it served, the pending labels, the last
@@ -64,7 +73,6 @@ every retraining in a table.
 
 ## What comes next
 
-- **Choosing what to label.** The page lists commands newest first; low-confidence and out-of-scope ones should come
-  first, since a confirmed easy command teaches little.
-- **Retraining on its own**, once enough labels have gathered, instead of on a button.
+- **A margin between intents**, not only to the threshold: two in-scope intents scoring 0.45 and 0.40 are as
+  uncertain as a call at the threshold, and the event does not carry the runner-up yet.
 - **Real numbers.** The loop is tested end to end on seeded commands; the chart fills with real ones as I use it.

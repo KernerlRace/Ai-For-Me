@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from aiforme.active_learning.retrain import NothingToLearn, retrain_and_announce
+from aiforme.active_learning.retrain import NothingToLearn, current_threshold, retrain_and_announce
 from aiforme.active_learning.store import Feedback, LabelLocked
 from aiforme.calendar import Calendar
 from aiforme.core import Event, EventBus
@@ -32,6 +32,7 @@ DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]     # the Vite 
 
 Kind = Literal["meeting", "shift", "other"]
 COMMAND_TOPICS = ("intent.recognized", "intent.unknown")
+AUTO_RETRAIN_EVERY = 20         # new labels since the last retraining that start the next one on their own
 
 
 class EventIn(BaseModel):
@@ -56,10 +57,11 @@ class LabelIn(BaseModel):
 
 
 def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: Path | None = None,
-               embedder: str = "e5") -> FastAPI:
+               embedder: str = "e5", auto_retrain_every: int = AUTO_RETRAIN_EVERY) -> FastAPI:
+    """`auto_retrain_every` 0 leaves retraining to the button."""
     app = FastAPI(title="AI For Me", docs_url="/api/docs", openapi_url="/api/openapi.json")
     # one retraining at a time; the thread is kept so tests can wait for it
-    app.state.retraining = {"thread": None, "error": None}
+    app.state.retraining = {"thread": None, "error": None, "automatic": False, "lock": threading.Lock()}
     app.add_middleware(CORSMiddleware, allow_origins=DEV_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
     def changed(action: str, event_id: int) -> None:
@@ -126,15 +128,25 @@ def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: 
         return EventBus(bus_path), Feedback(feedback_path)
 
     @app.get("/api/commands")
-    def commands(limit: int = 50) -> list[dict]:
-        """The last commands the assistant heard, newest first, with my label on each if there is one."""
+    def commands(limit: int = 50, order: Literal["recent", "uncertain"] = "recent") -> list[dict]:
+        """The commands the assistant heard, with my label on each if there is one. `recent`: newest first.
+        `uncertain`: the unlabelled ones first, closest to the out-of-scope threshold first — the calls the model
+        nearly made the other way, where a label teaches it the most — then the labelled ones, newest first."""
         limit = min(max(limit, 1), 500)
+        window = limit if order == "recent" else 500
         bus, fb = stores()
         with bus, fb:
             # intent.* also holds intent.model_updated: read a little more than asked for
-            events = [e for e in reversed(bus.recent(limit * 2, "intent.*")) if e.topic in COMMAND_TOPICS][:limit]
+            events = [e for e in reversed(bus.recent(window * 2, "intent.*")) if e.topic in COMMAND_TOPICS][:window]
             labels = fb.get([e.id for e in events])
-        return [{**_command(e), "label": labels[e.id].to_json() if e.id in labels else None} for e in events]
+            fallback = current_threshold(fb)
+        rows = [{**_command(e), "label": labels[e.id].to_json() if e.id in labels else None} for e in events]
+        for row in rows:
+            threshold = row.pop("threshold") or fallback
+            row["margin"] = None if threshold is None else round(abs(row["confidence"] - threshold), 3)
+        if order == "uncertain":
+            rows.sort(key=_doubt)
+        return rows[:limit]
 
     @app.put("/api/commands/{event_id}/label")
     def label(event_id: int, body: LabelIn) -> dict:
@@ -150,6 +162,9 @@ def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: 
                                event.created_at, body.intent, slots)
             except LabelLocked as exc:
                 raise HTTPException(409, str(exc)) from exc
+            due = auto_retrain_every and fb.pending_since_last_version() >= auto_retrain_every
+        if due:
+            start(automatic=True)
         return lab.to_json()
 
     @app.delete("/api/commands/{event_id}/label", status_code=204)
@@ -171,38 +186,51 @@ def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: 
         with bus, fb:
             pending = fb.labels(pending=True)
             versions, live, current = fb.versions(), fb.live_accuracy(), fb.current_version()
+            new_labels = fb.pending_since_last_version()
         thread = app.state.retraining["thread"]
         return {
             "version": current, "embedder": embedder, "intents": {**INTENTS, OUT_OF_SCOPE: None},
             "pending": {"confirmed": sum(lab.verdict == "confirmed" for lab in pending),
                         "corrected": sum(lab.verdict == "corrected" for lab in pending)},
             "retraining": thread is not None and thread.is_alive(), "error": app.state.retraining["error"],
+            "automatic": app.state.retraining["automatic"],
+            "auto": {"every": auto_retrain_every, "new": new_labels},
             "versions": [v.to_json() for v in versions], "live": live,
         }
 
     @app.post("/api/learning/retrain", status_code=202)
     def start_retrain() -> dict:
-        state = app.state.retraining
-        if state["thread"] is not None and state["thread"].is_alive():
+        if running():
             raise HTTPException(409, "a retraining is already running")
         bus, fb = stores()
         with bus, fb:
             if not fb.labels(pending=True):
                 raise HTTPException(409, "nothing to learn: no new labels")
-
-        def work():
-            try:
-                with EventBus(bus_path) as bus, Feedback(feedback_path) as fb:
-                    retrain_and_announce(fb, bus, embedder)
-            except NothingToLearn:
-                pass
-            except Exception as exc:            # shown on the page; the next attempt starts clean
-                state["error"] = repr(exc)
-
-        state["error"] = None
-        state["thread"] = threading.Thread(target=work, name="retrain", daemon=True)
-        state["thread"].start()
+        start(automatic=False)
         return {"retraining": True}
+
+    def running() -> bool:
+        thread = app.state.retraining["thread"]
+        return thread is not None and thread.is_alive()
+
+    def start(automatic: bool) -> None:
+        """A retraining in a thread of its own; a second one while it runs is not started."""
+        state = app.state.retraining
+        with state["lock"]:
+            if running():
+                return
+            state.update(error=None, automatic=automatic,
+                         thread=threading.Thread(target=work, name="retrain", daemon=True))
+            state["thread"].start()
+
+    def work():
+        try:
+            with EventBus(bus_path) as bus, Feedback(feedback_path) as fb:
+                retrain_and_announce(fb, bus, embedder)
+        except NothingToLearn:
+            pass
+        except Exception as exc:                # shown on the page; the next attempt starts clean
+            app.state.retraining["error"] = repr(exc)
 
     if WEB_DIST.exists():                       # the built frontend; `npm run dev` serves it instead in development
         app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"), name="assets")
@@ -222,7 +250,16 @@ def _command(e: Event) -> dict:
     return {"id": e.id, "heard_at": e.created_at, "text": str(p.get("text", "")),
             "intent": OUT_OF_SCOPE if e.topic == "intent.unknown" else str(p.get("intent")),
             "confidence": float(p.get("confidence", 0.0)), "slots": p.get("slots") or {},
-            "best_guess": p.get("best_guess"), "model": int(p.get("model", 0))}
+            "best_guess": p.get("best_guess"), "model": int(p.get("model", 0)), "threshold": p.get("threshold")}
+
+
+def _doubt(row: dict) -> tuple:
+    """Sort key: unlabelled before labelled; among the unlabelled the narrowest margin first (without a known
+    threshold, the lowest confidence); then the newest."""
+    if row["label"] is not None:
+        return (1, 0.0, -row["heard_at"])
+    closeness = row["margin"] if row["margin"] is not None else row["confidence"]
+    return (0, closeness, -row["heard_at"])
 
 
 def _check_slots(intent: str, slots: dict[str, str], text: str) -> dict[str, str]:
