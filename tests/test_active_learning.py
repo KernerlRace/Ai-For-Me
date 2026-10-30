@@ -175,7 +175,9 @@ def test_enough_new_labels_retrain_on_their_own(tmp_path):
     assert state["automatic"] and state["version"] == 1 and state["auto"]["new"] == 0
 
 
-def test_a_rejected_retraining_waits_for_new_labels():
+def test_a_rejected_retraining_waits_for_new_labels(monkeypatch):
+    # a clock that never moves, like time.time() on Windows before Python 3.13 within one ~16 ms tick
+    monkeypatch.setattr("aiforme.active_learning.store.time.time", lambda: 1_800_000_000.0)
     with Feedback() as fb:
         for i in range(3):
             heard(fb, i, f"раскочегарь {i}", "open_app", {"app": str(i)})
@@ -184,6 +186,20 @@ def test_a_rejected_retraining_waits_for_new_labels():
         assert fb.pending_since_last_version() == 0 and len(fb.labels(pending=True)) == 3
         heard(fb, 9, "раскочегарь стим", "open_app", {"app": "стим"})
         assert fb.pending_since_last_version() == 1
+
+
+def test_a_store_from_before_after_attempt_opens(tmp_path):
+    import sqlite3
+    path = tmp_path / "feedback.sqlite3"
+    with sqlite3.connect(path) as conn:
+        conn.execute("CREATE TABLE labels (event_id INTEGER PRIMARY KEY, text TEXT NOT NULL, predicted TEXT NOT NULL,"
+                     " predicted_slots TEXT NOT NULL, confidence REAL NOT NULL, served_by INTEGER NOT NULL,"
+                     " heard_at REAL NOT NULL, intent TEXT NOT NULL, slots TEXT NOT NULL, labelled_at REAL NOT NULL,"
+                     " version INTEGER)")
+        conn.execute("INSERT INTO labels VALUES (1, 'тише', 'mute', '{}', 0.4, 0, 1.0, 'volume_down', '{}', 2.0, NULL)")
+    conn.close()
+    with Feedback(path) as fb:
+        assert fb.pending_since_last_version() == 1 and fb.labels()[0].intent == "volume_down"
 
 
 def test_bus_get(tmp_path):
