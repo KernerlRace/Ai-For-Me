@@ -1,0 +1,55 @@
+{
+ "what": "test-session recall with whisper augmentation on and off, by training seed; whispers = of 10 whispered test takes",
+ "runs": [
+  {
+   "seed": 0,
+   "whisper": 0.0,
+   "test_recall": 0.88,
+   "whispers": 4,
+   "fa_per_hour": 0.0,
+   "threshold": 0.98,
+   "model": "v4"
+  },
+  {
+   "seed": 0,
+   "whisper": 0.15,
+   "test_recall": 0.92,
+   "whispers": 6,
+   "fa_per_hour": 0.0,
+   "threshold": 0.94,
+   "model": "v5"
+  },
+  {
+   "seed": 1,
+   "whisper": 0.0,
+   "test_recall": 0.98,
+   "whispers": 9,
+   "fa_per_hour": 0.0,
+   "threshold": 0.94
+  },
+  {
+   "seed": 1,
+   "whisper": 0.15,
+   "test_recall": 0.98,
+   "whispers": 9,
+   "fa_per_hour": 0.0,
+   "threshold": 0.95
+  },
+  {
+   "seed": 2,
+   "whisper": 0.0,
+   "test_recall": 0.76,
+   "whispers": 0,
+   "fa_per_hour": 0.0,
+   "threshold": 0.999
+  },
+  {
+   "seed": 2,
+   "whisper": 0.15,
+   "test_recall": 0.82,
+   "whispers": 3,
+   "fa_per_hour": 0.0,
+   "threshold": 0.999
+  }
+ ]
+}

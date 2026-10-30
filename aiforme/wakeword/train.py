@@ -26,6 +26,8 @@ from aiforme.wakeword.detector import CONFIG, HOP, MODEL, Detector
 from aiforme.wakeword.features import FRAMES, N_MELS, SAMPLE_RATE, WINDOW, log_mel
 
 RESULTS = MODEL.parents[1] / "eval" / "results"
+# share of augmented clips whispered first (dataset.whisperize), negatives too, so a whisper alone is no cue
+WHISPER = 0.15
 
 
 def make_model(channels=(16, 32, 64, 64)):
@@ -80,7 +82,8 @@ def coloured_noise(rng: np.random.Generator, seconds: float = 30.0) -> list[np.n
     return [white / np.abs(white).max(), pink / np.abs(pink).max()]
 
 
-def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = True) -> dict:
+def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = True,
+          whisper: float = WHISPER) -> dict:
     import torch
 
     torch.manual_seed(seed)
@@ -97,7 +100,8 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = T
     noise = clips_fit["ambient"] + coloured_noise(rng)
     ambient_s = sum(len(a) for a in clips_fit["ambient"]) / SAMPLE_RATE
     t0 = time.perf_counter()
-    X, y = build(clips_fit, noise, seed=seed, ambient_windows=int(min(12000, max(2000, ambient_s * 3))))
+    X, y = build(clips_fit, noise, seed=seed, ambient_windows=int(min(12000, max(2000, ambient_s * 3))),
+                 whisper=whisper)
     print(f"windows: {len(y)} ({int(y.sum())} positive), {time.perf_counter() - t0:.0f} s", flush=True)
 
     rounds = []
@@ -108,7 +112,7 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = T
         # mistakes for the word. The phrases matter for a new voice: three random windows per phrase are few next to
         # fifteen per wake word, and v3 fired on 23 of 60 plain commands said by a second speaker. Each source has
         # its own cap: in one pool a voice the model has not learned yet fills it, and the room goes unmined
-        aug = Augmenter(noise, rng)
+        aug = Augmenter(noise, rng, whisper)
         hard = np.concatenate([_mine(model, mean, std, clips_fit["ambient"], aug),
                                _mine(model, mean, std, clips_fit["negative"], aug)])
         print(f"hard negatives: {len(hard)} windows", flush=True)
@@ -127,7 +131,8 @@ def train(recorded: bool = True, epochs: int = 25, seed: int = 0, mine: bool = T
                       output_names=["logit"], dynamic_axes={"features": {0: "batch"}}, dynamo=False)
     config = {"threshold": final["threshold"], "consecutive": CONSECUTIVE, "refractory_s": REFRACTORY_S,
               "trained_on_recordings": recorded, "parameters": sum(p.numel() for p in model.parameters()),
-              "epochs": epochs, "fit_windows": len(y), "fit_ambient_minutes": round(ambient_s / 60, 1)}
+              "epochs": epochs, "fit_windows": len(y), "fit_ambient_minutes": round(ambient_s / 60, 1),
+              "whisper": whisper}
     config_path.write_text(json.dumps(config, indent=1), encoding="utf-8")
 
     report = {**config, "rounds": rounds,
@@ -315,12 +320,13 @@ def main() -> None:
     parser.add_argument("--no-recorded", action="store_true", help="train on the Windows voices only")
     parser.add_argument("--epochs", type=int, default=25)
     parser.add_argument("--no-mining", action="store_true", help="one round, without hard negatives")
+    parser.add_argument("--whisper", type=float, default=WHISPER, help="share of clips whispered; 0 turns it off")
     parser.add_argument("--eval-only", action="store_true", help="score the current model on the test session")
     args = parser.parse_args()
     if args.eval_only:
         print(json.dumps(evaluate_test(), indent=1))
     else:
-        train(recorded=not args.no_recorded, epochs=args.epochs, mine=not args.no_mining)
+        train(recorded=not args.no_recorded, epochs=args.epochs, mine=not args.no_mining, whisper=args.whisper)
 
 
 if __name__ == "__main__":
