@@ -144,6 +144,48 @@ def test_retrain_from_the_page(tmp_path):
     assert client.put(f"/api/commands/{slang}/label", json={"intent": "mute"}).status_code == 409
 
 
+def test_uncertain_commands_come_first(tmp_path):
+    client, (chrome, slang, _), bus_path = make(tmp_path)          # these two carry no threshold: older events
+    with EventBus(bus_path) as bus:
+        near, far, sure = (bus.publish(Event(t, {"text": text, "intent": i, "confidence": c, "slots": {},
+                                                  "model": 0, "threshold": 0.3})).id
+                           for t, text, i, c in [("intent.recognized", "сделай потише", "volume_down", 0.33),
+                                                 ("intent.unknown", "закажи пиццу", "out_of_scope", 0.04),
+                                                 ("intent.recognized", "который час", "tell_time", 0.97)])
+    assert client.put(f"/api/commands/{near}/label", json={"intent": "volume_down"}).status_code == 200
+    cmds = client.get("/api/commands", params={"order": "uncertain"}).json()
+    # unlabelled by margin to 0.3: пиццу 0.26, который час 0.67; without a threshold, by confidence: 0.11, 0.93
+    assert [c["id"] for c in cmds] == [slang, far, sure, chrome, near]
+    assert [c["margin"] for c in cmds[1:3]] == [0.26, 0.67] and cmds[0]["margin"] is None
+    assert [c["id"] for c in client.get("/api/commands").json()] == [sure, far, near, slang, chrome]
+
+
+def test_enough_new_labels_retrain_on_their_own(tmp_path):
+    _, (_, slang, _), bus_path = make(tmp_path)
+    client = TestClient(create_app(Calendar(tmp_path / "calendar.sqlite3"), bus_path, tmp_path / "feedback.sqlite3",
+                                   "tfidf", auto_retrain_every=len(SLANG) + 1))
+    with Feedback(tmp_path / "feedback.sqlite3") as fb:
+        for i, (text, intent, slots) in enumerate(SLANG, 100):
+            heard(fb, i, text, intent, slots)
+    assert client.get("/api/learning").json()["auto"] == {"every": len(SLANG) + 1, "new": len(SLANG)}
+    assert client.app.state.retraining["thread"] is None                       # one label short
+    client.put(f"/api/commands/{slang}/label", json={"intent": "open_app", "slots": {"app": "телегу"}})
+    client.app.state.retraining["thread"].join(timeout=120)
+    state = client.get("/api/learning").json()
+    assert state["automatic"] and state["version"] == 1 and state["auto"]["new"] == 0
+
+
+def test_a_rejected_retraining_waits_for_new_labels():
+    with Feedback() as fb:
+        for i in range(3):
+            heard(fb, i, f"раскочегарь {i}", "open_app", {"app": str(i)})
+        assert fb.pending_since_last_version() == 3
+        fb.add_version("tfidf", False, fb.labels(pending=True), 300, {})
+        assert fb.pending_since_last_version() == 0 and len(fb.labels(pending=True)) == 3
+        heard(fb, 9, "раскочегарь стим", "open_app", {"app": "стим"})
+        assert fb.pending_since_last_version() == 1
+
+
 def test_bus_get(tmp_path):
     with EventBus(tmp_path / "bus.sqlite3") as bus:
         e = bus.publish(Event("ping.sent", {"n": 1}))

@@ -87,11 +87,11 @@ def current_model(feedback: Feedback, embedder: str = "e5", device: str | None =
                   ) -> tuple[IntentClassifier, int]:
     """The classifier of the current version — the hand-written commands and the accepted labels — and its id."""
     data = training_set(feedback.labels(pending=False), load_examples(TRAIN), load_examples(TEST))
-    clf = IntentClassifier(make_embedder(embedder, device), threshold=_threshold(feedback)).fit(data)
+    clf = IntentClassifier(make_embedder(embedder, device), threshold=current_threshold(feedback)).fit(data)
     return clf, feedback.current_version()
 
 
-def _threshold(feedback: Feedback) -> float | None:
+def current_threshold(feedback: Feedback) -> float | None:
     """The threshold of the current version; None before the first retraining, when it is still to be chosen."""
     current = feedback.current_version()
     return next((v.metrics.get("threshold") for v in feedback.versions() if v.id == current), None)
@@ -103,7 +103,7 @@ def retrain(feedback: Feedback, embedder: str = "e5", device: str | None = None,
     if not pending:
         raise NothingToLearn("no pending labels")
     new = embedders(embedder, device)
-    current = IntentClassifier(new(), threshold=_threshold(feedback)).fit(training_set(included, base, test))
+    current = IntentClassifier(new(), threshold=current_threshold(feedback)).fit(training_set(included, base, test))
     data = training_set(included + pending, base, test)
     candidate = IntentClassifier(new(), threshold=current.threshold).fit(data)
 

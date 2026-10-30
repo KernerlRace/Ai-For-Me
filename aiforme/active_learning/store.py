@@ -129,6 +129,13 @@ class Feedback:
         rows = self._conn.execute(f"SELECT {_LABEL_COLUMNS} FROM labels {where} ORDER BY labelled_at, event_id")
         return [_label(r) for r in rows.fetchall()]
 
+    def pending_since_last_version(self) -> int:
+        """Pending labels given after the last retraining, accepted or not: what a new attempt would add."""
+        row = self._conn.execute(
+            "SELECT COUNT(*) FROM labels WHERE version IS NULL "
+            "AND labelled_at > COALESCE((SELECT MAX(created_at) FROM versions WHERE id > 0), 0)").fetchone()
+        return row[0]
+
     def _unlocked(self, event_id: int) -> None:
         row = self._conn.execute("SELECT version FROM labels WHERE event_id = ?", (event_id,)).fetchone()
         if row and row[0] is not None:

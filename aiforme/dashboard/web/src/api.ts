@@ -71,7 +71,10 @@ export interface Command {
   best_guess: string | null;
   model: number;                   // the version that recognized it
   label: Label | null;
+  margin: number | null;           // distance of the confidence from the out-of-scope threshold
 }
+
+export type CommandOrder = "uncertain" | "recent";
 
 export interface Scores {
   accuracy: number;
@@ -104,6 +107,8 @@ export interface Learning {
   intents: Record<string, string | null>;     // intent -> the slot it takes
   pending: { confirmed: number; corrected: number };
   retraining: boolean;
+  automatic: boolean;              // the running or last retraining was started by the label count
+  auto: { every: number; new: number };   // retrain on its own at `every` labels since the last attempt
   error: string | null;
   versions: Version[];
   live: { model: number; labelled: number; correct: number }[];
@@ -137,7 +142,7 @@ export const SLOT_LABELS: Record<string, string> = {
 };
 
 export const learningApi = {
-  commands: (limit = 100) => request<Command[]>(`/api/commands?limit=${limit}`),
+  commands: (order: CommandOrder, limit = 100) => request<Command[]>(`/api/commands?limit=${limit}&order=${order}`),
   label: (id: number, intent: string, slots: Slots) =>
     request<Label>(`/api/commands/${id}/label`, { method: "PUT", body: JSON.stringify({ intent, slots }) }),
   unlabel: (id: number) => request<void>(`/api/commands/${id}/label`, { method: "DELETE" }),
