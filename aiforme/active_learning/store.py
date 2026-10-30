@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS labels (
     intent          TEXT NOT NULL,
     slots           TEXT NOT NULL,
     labelled_at     REAL NOT NULL,
-    version         INTEGER                  -- the accepted version that first trained on it; NULL: pending
+    version         INTEGER,                 -- the accepted version that first trained on it; NULL: pending
+    after_attempt   INTEGER NOT NULL DEFAULT -1   -- the last retraining, accepted or not, when it was given
 );
 CREATE TABLE IF NOT EXISTS versions (
     id          INTEGER PRIMARY KEY,
@@ -84,11 +85,15 @@ class Version:
 
 _LABEL_COLUMNS = ("event_id, text, predicted, predicted_slots, confidence, served_by, heard_at, intent, slots, "
                   "labelled_at, version")
+_LAST_ATTEMPT = "SELECT COALESCE(MAX(id), -1) FROM versions"
 
 
 class Feedback:
     def __init__(self, path: str | Path = ":memory:", timeout: float = 10.0):
         self._conn = connect(path, SCHEMA, timeout)
+        columns = {row[1] for row in self._conn.execute("PRAGMA table_info(labels)")}
+        if "after_attempt" not in columns:          # a store from before the column
+            self._conn.execute("ALTER TABLE labels ADD COLUMN after_attempt INTEGER NOT NULL DEFAULT -1")
 
     def close(self) -> None:
         self._conn.close()
@@ -106,7 +111,8 @@ class Feedback:
         """Adds a label, or replaces a pending one."""
         self._unlocked(event_id)
         self._conn.execute(
-            f"INSERT OR REPLACE INTO labels ({_LABEL_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+            f"INSERT OR REPLACE INTO labels ({_LABEL_COLUMNS}, after_attempt) "
+            f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ({_LAST_ATTEMPT}))",
             (event_id, text, predicted, json.dumps(predicted_slots, ensure_ascii=False), confidence, served_by,
              heard_at, intent, json.dumps(slots, ensure_ascii=False), time.time()))
         return self.get([event_id])[event_id]
@@ -130,10 +136,11 @@ class Feedback:
         return [_label(r) for r in rows.fetchall()]
 
     def pending_since_last_version(self) -> int:
-        """Pending labels given after the last retraining, accepted or not: what a new attempt would add."""
+        """Pending labels given after the last retraining, accepted or not: what a new attempt would add. Counted
+        by attempt, not by clock: on Windows before Python 3.13 time.time() ticks every ~16 ms, and a label given
+        right after a retraining could carry the same time as the version."""
         row = self._conn.execute(
-            "SELECT COUNT(*) FROM labels WHERE version IS NULL "
-            "AND labelled_at > COALESCE((SELECT MAX(created_at) FROM versions WHERE id > 0), 0)").fetchone()
+            f"SELECT COUNT(*) FROM labels WHERE version IS NULL AND after_attempt = ({_LAST_ATTEMPT})").fetchone()
         return row[0]
 
     def _unlocked(self, event_id: int) -> None:
