@@ -83,15 +83,16 @@ Everything is scored by streaming audio through the exported ONNX model exactly 
 (`eval/results/wakeword*.json`): validation is 15% of the training recordings, held out by file; the test is a separate
 session recorded on another day — 50 takes and 10 minutes of a different video playing.
 
-| | v1: 10 min of room audio | v3: 70 min + hard negatives | v4: + a second voice, phrases mined |
-|---|---|---|---|
-| Validation: wake words found | 29 of 30 (96.7%) | **30 of 30 (100%)** | **45 of 45 (100%)** |
-| Validation: false accepts in held-out room audio | 6 in 10 min (≈36 an hour) | **0** in 10 min | **0** in 12 min |
-| Validation: held-out phrases it fires on | — | 0 of 15 | 0 of 24 |
-| Test: wake words found, 50 takes | 42 (84%) | **45 (90%)** | 44 (88%) |
-| Test: false accepts, 10 min | 2 (≈12 an hour) | **0** | **0** |
-| Synthetic phrases it fires on, of 79 | — | 2 | **0** |
-| Threshold | 0.977 | 0.97 | 0.98 |
+| | v1: 10 min of room audio | v3: 70 min + hard negatives | v4: + a second voice, phrases mined | v5: + whispers |
+|---|---|---|---|---|
+| Validation: wake words found | 29 of 30 (96.7%) | **30 of 30 (100%)** | **45 of 45 (100%)** | **45 of 45 (100%)** |
+| Validation: false accepts in held-out room audio | 6 in 10 min (≈36 an hour) | **0** in 10 min | **0** in 12 min | **0** in 12 min |
+| Validation: held-out phrases it fires on | — | 0 of 15 | 0 of 24 | 0 of 24 |
+| Test: wake words found, 50 takes | 42 (84%) | 45 (90%) | 44 (88%) | **46 (92%)** |
+| — of them whispered, 10 takes | — | 5 | 4 | **6** |
+| Test: false accepts, 10 min | 2 (≈12 an hour) | **0** | **0** | **0** |
+| Synthetic phrases it fires on, of 79 | — | 2 | **0** | **0** |
+| Threshold | 0.977 | 0.97 | 0.98 | 0.94 |
 
 <sub>v4's validation adds the second speaker's held-out files to the same split, so it is not the same set as v3's.
 Validation for v1 and v3 uses the same held-out takes and only room audio from the sessions recorded after v1,
@@ -119,8 +120,27 @@ What changed, and what each step bought:
   0.999 by her phrases — because a wake-word take gives 15 training windows and a phrase only 3, so her voice itself
   looked like the wake word. Mining the phrases as well as the room fixed it; with one shared cap her phrases took all
   4000 places and the room went unmined (1 false accept on the test), so each source has its own.
+- **Whispers, made from speech.** A whisper is speech without the voice: the vocal tract still shapes the sound, but
+  noise excites it instead of the vocal folds. `whisperize` keeps each frame's spectral envelope (cepstrally
+  smoothed, which drops the pitch harmonics), gives it a random phase and thins out the low end. Measured on my
+  recordings it matches real whispers: voicing — the autocorrelation peak at pitch lags — 0.21 against 0.25 for
+  real whispers and 0.57 for speech; spectral centroid 2.0 kHz against 2.2 kHz and 1.2 kHz. 15% of training clips
+  are whispered, negatives too, so a whisper alone is no cue.
+- **The seed matters more than the whispers.** Trained again with other seeds, whispers on and off, all else equal:
 
-Limits. All test misses are whispered — v4 finds 4 of 10 whispers (v3: 5) and 40 of 40 of everything else. Zero false
+  | Seed | Without whispers | With whispers |
+  |---|---|---|
+  | 0 (v4 → v5) | 88%, whispers 4 of 10 | 92%, 6 of 10 |
+  | 1 | 98%, 9 of 10 | 98%, 9 of 10 |
+  | 2 | 76%, 0 of 10 | 82%, 3 of 10 |
+
+  The augmentation never hurt and adds about two whispers in ten, with no false accepts in any run. But the seed
+  alone moves test recall from 76% to 98%: when a held-out phrase fires in validation the threshold is pinned at
+  0.999, and whispers are the first takes to fall under it. v5 is seed 0, the default, as decided before the runs;
+  picking seed 1 for its test score would be tuning on the test session. Making training stable across seeds —
+  averaging several models, or a validation set large enough to tell them apart — is the next step for it.
+
+Limits. All test misses are whispered — v5 finds 6 of 10 whispers and 40 of 40 of everything else. Zero false
 accepts in 22 minutes of held-out audio says the rate is probably below about 8 an hour (the rule of three), not that it
 is below one; that needs hours of test audio. On the second voice v4 finds 97 of 100 and fires on none of her phrases,
 but those are mostly its training files — her own test session, on another day, is what will measure it.
