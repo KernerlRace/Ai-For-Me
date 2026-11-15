@@ -33,5 +33,10 @@ def activity_path() -> Path:
     return data_dir() / "activity.sqlite3"
 
 
+def vision_dir() -> Path:
+    """The vision agent's snapshots, their images and the grounding reports."""
+    return data_dir() / "vision"
+
+
 def feedback_path() -> Path:
     return data_dir() / "feedback.sqlite3"

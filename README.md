@@ -6,7 +6,9 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 3 is built — [active learning](aiforme/active_learning): commands the assistant heard are
+> **Status:** Phase 4 has started — the [vision agent](aiforme/vision_agent) collects a grounding dataset from my own
+> windows, labelled by UI Automation, and scores a no-ML baseline on it; a local VLM comes next.
+> Phase 3 is built — [active learning](aiforme/active_learning): commands the assistant heard are
 > labelled on the dashboard, the closest calls first (near the out-of-scope threshold or between two intents), retrain
 > the intent classifier, and a new version replaces the running one only if it loses at most one held-out test phrase
 > and does at least as well on the labelled commands, scored out of fold; its accuracy chart fills as I use it.

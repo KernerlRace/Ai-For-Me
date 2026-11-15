@@ -6,6 +6,8 @@
     python -m aiforme say "открой телеграм"     # a typed command, as if it was spoken
     python -m aiforme dashboard                 # only the web UI, http://127.0.0.1:8765
     python -m aiforme retrain                   # the intent classifier on the commands labelled in the UI
+    python -m aiforme snapshot --count 5        # the window in front, for the vision agent's dataset
+    python -m aiforme vision-eval               # score a grounder on those snapshots
     python -m aiforme publish voice.transcribed '{"text": "open the terminal"}'
     python -m aiforme tail -n 50 'voice.*'
 """
@@ -19,7 +21,7 @@ import threading
 from datetime import datetime, timedelta
 
 from aiforme.core import Event, EventBus, run
-from aiforme.core.config import activity_path, bus_path, calendar_path, feedback_path, modes_path
+from aiforme.core.config import activity_path, bus_path, calendar_path, feedback_path, modes_path, vision_dir
 
 EMBEDDERS = ("tfidf", "charcnn", "minilm", "e5")
 
@@ -47,6 +49,12 @@ def main(argv: list[str] | None = None) -> int:
     dash.add_argument("--embedder", default="e5", choices=EMBEDDERS, help="what the Retrain button trains")
     learn = commands.add_parser("retrain", help="retrain the intent classifier on the labelled commands")
     learn.add_argument("--embedder", default="e5", choices=EMBEDDERS)
+    snap = commands.add_parser("snapshot", help="save the window in front and its UI elements (vision dataset)")
+    snap.add_argument("--count", type=int, default=1)
+    snap.add_argument("--delay", type=float, default=3.0, help="seconds to switch to the window first")
+    snap.add_argument("--interval", type=float, default=10.0, help="seconds between snapshots")
+    veval = commands.add_parser("vision-eval", help="score a grounder on the collected snapshots")
+    veval.add_argument("--grounder", default="uia")
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -55,6 +63,10 @@ def main(argv: list[str] | None = None) -> int:
         return _dashboard(args.embedder)
     if args.command == "retrain":
         return _retrain(args.embedder)
+    if args.command == "snapshot":
+        return _snapshot(args)
+    if args.command == "vision-eval":
+        return _vision_eval(args.grounder)
     with EventBus(bus_path()) as bus:
         if args.command == "publish":
             event = bus.publish(Event(args.topic, json.loads(args.payload), source="cli"))
@@ -180,6 +192,32 @@ def _retrain(embedder: str) -> int:
     print(f"version {v.id}: {'accepted' if v.accepted else 'rejected'}, {m['real_labels']} new labels")
     print(f"  test phrases         {m['test_before']['accuracy']:.1%} -> {m['test']['accuracy']:.1%}")
     print(f"  the labelled commands {m['real_before']['accuracy']:.1%} -> {m['real']['accuracy']:.1%} (out of fold)")
+    return 0
+
+
+def _snapshot(args) -> int:
+    from aiforme.vision_agent.dataset import targets
+    from aiforme.vision_agent.screen import collect
+
+    print(f"Switch to the window: the first snapshot in {args.delay:g}s.", flush=True)
+    for snap in collect(vision_dir(), args.count, args.delay, args.interval):
+        print(f"{snap.id}  {snap.process:20} {len(snap.elements):5} elements, {len(targets(snap)):4} targets  "
+              f"{snap.window[:50]}", flush=True)
+    return 0
+
+
+def _vision_eval(grounder: str) -> int:
+    from aiforme.vision_agent.dataset import Store
+    from aiforme.vision_agent.evaluate import evaluate, report, save
+    from aiforme.vision_agent.grounding import make_grounder
+
+    store = Store(vision_dir())
+    if not store.snapshots():
+        print("No snapshots yet: take some with `python -m aiforme snapshot`.", file=sys.stderr)
+        return 1
+    result = evaluate(make_grounder(grounder), store)
+    print(report(result))
+    print(f"every task: {save(result, vision_dir())}")
     return 0
 
 
