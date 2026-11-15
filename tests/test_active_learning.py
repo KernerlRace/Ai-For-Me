@@ -160,6 +160,31 @@ def test_uncertain_commands_come_first(tmp_path):
     assert [c["id"] for c in client.get("/api/commands").json()] == [sure, far, near, slang, chrome]
 
 
+def test_a_close_runner_up_makes_a_command_uncertain(tmp_path):
+    client, _, bus_path = make(tmp_path)
+    with EventBus(bus_path) as bus:
+        def say(text, intent, conf, rival, rival_conf):
+            return bus.publish(Event("intent.recognized", {
+                "text": text, "intent": intent, "confidence": conf, "slots": {}, "model": 0, "threshold": 0.3,
+                "runner_up": rival, "runner_up_confidence": rival_conf})).id
+        torn = say("убери звук", "mute", 0.45, "volume_down", 0.40)       # 0.15 from the threshold, 0.05 from B
+        edge = say("потише", "volume_down", 0.38, "mute", 0.10)           # 0.08 from the threshold
+        clear = say("который час", "tell_time", 0.97, "agenda", 0.01)
+    cmds = client.get("/api/commands", params={"order": "uncertain"}).json()
+    ids = [c["id"] for c in cmds]
+    assert ids.index(torn) < ids.index(edge) < ids.index(clear)
+    row = cmds[ids.index(torn)]
+    assert (row["runner_up"], row["intent_margin"], row["margin"]) == ("volume_down", 0.05, 0.15)
+
+
+def test_intent_events_carry_the_runner_up():
+    clf = IntentClassifier(TfidfEmbedder()).fit(load_examples(TRAIN))
+    out = list(IntentModule(clf).handle(Event("text.command", {"text": "открой телеграм"}, created_at=time.time())))
+    payload = out[0].payload
+    assert payload["runner_up"] and payload["runner_up"] != payload["intent"]
+    assert 0 <= payload["runner_up_confidence"] <= payload["confidence"]
+
+
 def test_enough_new_labels_retrain_on_their_own(tmp_path):
     _, (_, slang, _), bus_path = make(tmp_path)
     client = TestClient(create_app(Calendar(tmp_path / "calendar.sqlite3"), bus_path, tmp_path / "feedback.sqlite3",

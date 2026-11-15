@@ -71,8 +71,8 @@ export function CommandsPage() {
           </div>
         </div>
         {order === "uncertain" && commands.length > 0 && (
-          <p className="muted small hint">Сверху — неразмеченные команды, где уверенность модели ближе всего к порогу:
-            метка на них учит её больше всего.</p>
+          <p className="muted small hint">Сверху — неразмеченные команды, где модель колебалась: уверенность у самого
+            порога или два варианта почти поровну. Метка на них учит её больше всего.</p>
         )}
         {commands.length === 0 && (
           <p className="muted">Пока пусто: скажите ассистенту что-нибудь или отправьте
@@ -198,7 +198,7 @@ function CommandRow({ command: c, intents, onLabel, onUndo }: RowProps) {
         {!label && (
           <span className="muted">
             {Math.round(c.confidence * 100)}%{c.intent === "out_of_scope" && c.best_guess
-              ? `, похоже на «${intentName(c.best_guess)}»` : ""} · v{c.model}
+              ? `, похоже на «${intentName(c.best_guess)}»` : ""}{rival(c)} · v{c.model}
           </span>
         )}
       </div>
@@ -228,6 +228,18 @@ function CommandRow({ command: c, intents, onLabel, onUndo }: RowProps) {
     </li>
   );
 }
+
+/** «, или «Закрыть приложение» 40%» when the runner-up came close; nothing for older events or a clear win. */
+function rival(c: Command) {
+  // a rejected command whose rival is "not a command" itself already says so
+  if (!c.runner_up || c.runner_up === c.intent || c.runner_up_confidence === null || c.intent_margin === null
+      || c.intent_margin > CLOSE) {
+    return "";
+  }
+  return `, или «${intentName(c.runner_up)}» ${Math.round(c.runner_up_confidence * 100)}%`;
+}
+
+const CLOSE = 0.2;    // a runner-up within this of the top class is worth showing
 
 function describe(intent: string, slots: Slots) {
   const value = Object.values(slots)[0];

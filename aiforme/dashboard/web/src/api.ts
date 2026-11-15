@@ -72,6 +72,9 @@ export interface Command {
   model: number;                   // the version that recognized it
   label: Label | null;
   margin: number | null;           // distance of the confidence from the out-of-scope threshold
+  runner_up: string | null;        // the second most probable class; null on events from before it was recorded
+  runner_up_confidence: number | null;
+  intent_margin: number | null;    // how far the top class was ahead of the runner-up
 }
 
 export type CommandOrder = "uncertain" | "recent";

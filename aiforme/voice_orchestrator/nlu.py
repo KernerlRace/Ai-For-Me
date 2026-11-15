@@ -75,6 +75,14 @@ class Parse:
     confidence: float           # probability of `intent`; for out-of-scope, of the best in-scope guess
     slots: dict[str, str]
     best_guess: str = ""        # the in-scope intent that lost to out-of-scope, if any
+    runner_up: str = ""         # the strongest other class: with the one `confidence` is about, the top two
+    runner_up_confidence: float = 0.0
+
+    @property
+    def intent_margin(self) -> float:
+        """How far ahead the top class was of the second, whichever two they were: 0.45 against 0.40 is as
+        uncertain a call as one at the out-of-scope threshold."""
+        return abs(self.confidence - self.runner_up_confidence)
 
 
 # --- embeddings ---------------------------------------------------------------------------------------
@@ -318,8 +326,12 @@ class IntentClassifier:
         if intent == OUT_OF_SCOPE:
             in_scope = classes != OUT_OF_SCOPE
             best = int(np.argmax(np.where(in_scope, p, -1)))
-            return Parse(text, OUT_OF_SCOPE, float(p[best]), {}, best_guess=str(classes[best]))
-        return Parse(text, intent, conf, self.slots.extract(intent, text))
+            rival, rival_conf = _strongest_other(classes, p, best)
+            return Parse(text, OUT_OF_SCOPE, float(p[best]), {}, best_guess=str(classes[best]),
+                         runner_up=rival, runner_up_confidence=rival_conf)
+        rival, rival_conf = _strongest_other(classes, p, int(np.argmax(p)))
+        return Parse(text, intent, conf, self.slots.extract(intent, text),
+                     runner_up=rival, runner_up_confidence=rival_conf)
 
     def _new_clf(self) -> LogisticRegression:
         return LogisticRegression(C=self.C, max_iter=5000, class_weight="balanced")
@@ -350,6 +362,15 @@ class IntentClassifier:
             if score > best[0] + 1e-9:
                 best = (score, float(t), {"in_scope_accuracy": acc_in, "oos_recall": rec_oos, "score": score})
         return best[1], best[2]
+
+
+def _strongest_other(classes: np.ndarray, p: np.ndarray, skip: int) -> tuple[str, float]:
+    """The most probable class but `skip`. `skip` is the top class, or the best in-scope one when the
+    out-of-scope class itself is on top — then that class is the rival — so the pair is always the top two."""
+    if len(classes) < 2:
+        return "", 0.0
+    i = int(np.argmax(np.where(np.arange(len(p)) == skip, -1, p)))
+    return str(classes[i]), float(p[i])
 
 
 def _apply_threshold(classes: np.ndarray, p: np.ndarray, threshold: float) -> tuple[str, float]:

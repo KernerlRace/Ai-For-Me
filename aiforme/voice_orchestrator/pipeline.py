@@ -60,7 +60,8 @@ class IntentModule(Module):
         parse = self.classifier.predict_one(text)
         payload = {"text": text, "intent": parse.intent, "confidence": round(parse.confidence, 3),
                    "slots": parse.slots, "language": language(text), "model": self.version,
-                   "threshold": self.classifier.threshold}
+                   "threshold": self.classifier.threshold, "runner_up": parse.runner_up,
+                   "runner_up_confidence": round(parse.runner_up_confidence, 3)}
         if parse.intent == OUT_OF_SCOPE:
             yield Event("intent.unknown", {**payload, "best_guess": parse.best_guess})
         else:

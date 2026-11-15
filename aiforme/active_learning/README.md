@@ -59,11 +59,21 @@ other) and fails the first, losing three test phrases.
 
 ## What to label first
 
-The list opens on **«Сначала спорные»**: unlabelled commands closest to the out-of-scope threshold come first —
-uncertainty sampling, the classic active-learning query. Every intent event carries the threshold it was judged
-against, so the margin is exact even after the threshold has been carried to a new version. A command decided with
-0.97 confidence and confirmed teaches the model little; *«раскочегарь дискорд»* at 0.21 against a threshold of
-0.28 — rejected by a hair — is exactly the label it is missing. **«По времени»** shows everything newest first.
+The list opens on **«Сначала спорные»**: the unlabelled commands the model nearly decided the other way come first —
+uncertainty sampling, the classic active-learning query. A call can be close in two ways, and a command is ranked by
+the narrower of the two margins:
+
+| Margin | Between | Example |
+|---|---|---|
+| to the threshold | the confidence and the out-of-scope threshold | *«раскочегарь дискорд»* at 0.21 against 0.28 — rejected by a hair |
+| to the runner-up | the top class and the second | *«убери звук»*: mute 0.45, volume down 0.40 — in scope, but a coin flip |
+
+The first alone misses the second kind: 0.45 is far above a threshold of 0.28, yet the model barely knew which
+intent it heard. Every intent event carries the threshold it was judged against and the runner-up with its
+probability, so both margins are exact even after the threshold has been carried to a new version; the row shows the
+runner-up when it came within 0.2. A command decided with 0.97 confidence and confirmed teaches the model little.
+Events from before the runner-up was recorded are ranked by the threshold alone. **«По времени»** shows everything
+newest first.
 
 ## On the dashboard
 
@@ -73,6 +83,4 @@ every retraining in a table.
 
 ## What comes next
 
-- **A margin between intents**, not only to the threshold: two in-scope intents scoring 0.45 and 0.40 are as
-  uncertain as a call at the threshold, and the event does not carry the runner-up yet.
 - **Real numbers.** The loop is tested end to end on seeded commands; the chart fills with real ones as I use it.

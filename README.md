@@ -6,9 +6,10 @@
 
 A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
 
-> **Status:** Phase 3 under way — [active learning](aiforme/active_learning): commands the assistant heard are
-> labelled on the dashboard, retrain the intent classifier, and a new version replaces the running one only if it
-> loses at most one held-out test phrase and does at least as well on the labelled commands, scored out of fold.
+> **Status:** Phase 3 is built — [active learning](aiforme/active_learning): commands the assistant heard are
+> labelled on the dashboard, the closest calls first (near the out-of-scope threshold or between two intents), retrain
+> the intent classifier, and a new version replaces the running one only if it loses at most one held-out test phrase
+> and does at least as well on the labelled commands, scored out of fold; its accuracy chart fills as I use it.
 > Phase 2 is running — the [mode autopilot](aiforme/mode_autopilot) switches the machine between normal,
 > coding, gaming and meeting modes on its own, with its own calendar and the first page of the
 > [dashboard](aiforme/dashboard) (FastAPI + React); the learned mode model waits for weeks of activity data.

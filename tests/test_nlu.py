@@ -88,3 +88,14 @@ def test_rejected_command_keeps_its_best_guess():
     parse = clf.predict_one("открой телеграм")
     assert parse.intent == OUT_OF_SCOPE
     assert parse.best_guess == "open_app"
+    assert parse.runner_up not in ("", "open_app") and parse.runner_up_confidence <= parse.confidence
+
+
+def test_runner_up_is_the_second_of_the_top_two(clf):
+    import numpy as np
+    for text in ["открой телеграм", "сделай потише", "закажи пиццу", "открой и закрой"]:
+        parse = clf.predict_one(text)
+        p = clf._clf.predict_proba(clf.embedder.encode([normalize(text)]))[0]
+        top_two = np.sort(p)[-2:]
+        assert parse.intent_margin == pytest.approx(top_two[1] - top_two[0]), text
+        assert parse.runner_up in clf._clf.classes_ and parse.runner_up != (parse.best_guess or parse.intent)

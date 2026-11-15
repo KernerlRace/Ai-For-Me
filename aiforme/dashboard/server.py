@@ -130,8 +130,9 @@ def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: 
     @app.get("/api/commands")
     def commands(limit: int = 50, order: Literal["recent", "uncertain"] = "recent") -> list[dict]:
         """The commands the assistant heard, with my label on each if there is one. `recent`: newest first.
-        `uncertain`: the unlabelled ones first, closest to the out-of-scope threshold first — the calls the model
-        nearly made the other way, where a label teaches it the most — then the labelled ones, newest first."""
+        `uncertain`: the unlabelled ones first, the closest calls first — the confidence nearest the out-of-scope
+        threshold, or the top intent nearest the runner-up, whichever is narrower: the calls the model nearly made
+        the other way, where a label teaches it the most — then the labelled ones, newest first."""
         limit = min(max(limit, 1), 500)
         window = limit if order == "recent" else 500
         bus, fb = stores()
@@ -144,6 +145,8 @@ def create_app(calendar: Calendar, bus_path: Path | None = None, feedback_path: 
         for row in rows:
             threshold = row.pop("threshold") or fallback
             row["margin"] = None if threshold is None else round(abs(row["confidence"] - threshold), 3)
+            rival = row["runner_up_confidence"]
+            row["intent_margin"] = None if rival is None else round(abs(row["confidence"] - rival), 3)
         if order == "uncertain":
             rows.sort(key=_doubt)
         return rows[:limit]
@@ -250,15 +253,18 @@ def _command(e: Event) -> dict:
     return {"id": e.id, "heard_at": e.created_at, "text": str(p.get("text", "")),
             "intent": OUT_OF_SCOPE if e.topic == "intent.unknown" else str(p.get("intent")),
             "confidence": float(p.get("confidence", 0.0)), "slots": p.get("slots") or {},
-            "best_guess": p.get("best_guess"), "model": int(p.get("model", 0)), "threshold": p.get("threshold")}
+            "best_guess": p.get("best_guess"), "model": int(p.get("model", 0)), "threshold": p.get("threshold"),
+            "runner_up": p.get("runner_up") or None, "runner_up_confidence": p.get("runner_up_confidence")}
 
 
 def _doubt(row: dict) -> tuple:
-    """Sort key: unlabelled before labelled; among the unlabelled the narrowest margin first (without a known
-    threshold, the lowest confidence); then the newest."""
+    """Sort key: unlabelled before labelled; among the unlabelled the narrowest of the two margins first — to the
+    threshold and to the runner-up; an event from before either was recorded leaves it out, and with neither the
+    lowest confidence goes first; then the newest."""
     if row["label"] is not None:
         return (1, 0.0, -row["heard_at"])
-    closeness = row["margin"] if row["margin"] is not None else row["confidence"]
+    margins = [m for m in (row["margin"], row["intent_margin"]) if m is not None]
+    closeness = min(margins) if margins else row["confidence"]
     return (0, closeness, -row["heard_at"])
 
 
