@@ -4,26 +4,52 @@
 ![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A personal AI layer for my own machine: a voice-controlled orchestrator that also acts on its own — switching the environment between coding and gaming, watching the system for anomalies, turning calendar shifts and receipt screenshots into a finance tracker, and giving a screen-reading agent the ability to act in any application instead of a fixed command set.
+A personal AI layer for my own Windows machine, built as a set of small ML systems rather than a wrapper around one
+LLM call. Say «Амадеус» and a command in Russian or English, and it acts: a wake-word CNN trained from scratch,
+Whisper on the GPU, an intent classifier that retrains itself on the commands I label, a mode autopilot that sets the
+machine up for coding, gaming or a meeting, and a vision agent that learns to click what it is told to on any screen.
 
-> **Status:** Phase 4 has started — the [vision agent](aiforme/vision_agent) collects a grounding dataset from my own
-> windows, labelled by UI Automation, and scores a no-ML baseline on it; a local VLM comes next.
-> Phase 3 is built — [active learning](aiforme/active_learning): commands the assistant heard are
-> labelled on the dashboard, the closest calls first (near the out-of-scope threshold or between two intents), retrain
-> the intent classifier, and a new version replaces the running one only if it loses at most one held-out test phrase
-> and does at least as well on the labelled commands, scored out of fold; its accuracy chart fills as I use it.
-> Phase 2 is running — the [mode autopilot](aiforme/mode_autopilot) switches the machine between normal,
-> coding, gaming and meeting modes on its own, with its own calendar and the first page of the
-> [dashboard](aiforme/dashboard) (FastAPI + React); the learned mode model waits for weeks of activity data.
-> Phase 1 is done — the [voice orchestrator](aiforme/voice_orchestrator) works end to end: wake word,
-> Whisper on the GPU, intent recognition in Russian and English (92.4% on held-out phrases, 90.0% through speech) and
-> 14 actions on Windows, woken by «Амадеус» — a wake-word CNN trained from scratch on my own recordings and a second speaker's, with hard-negative mining (92% of wake words in a separate test session — all misses whispered — and no false accepts in 22 minutes of held-out audio). Phase 0 — the event
-> bus, the module interface and basic memory — is done. The architecture, the ML approach for each module and the
-> phased build order are written up in [ROADMAP.md](ROADMAP.md).
+Each part has a baseline, a held-out evaluation and a write-up of what went wrong — the goal is the whole ML
+lifecycle: data, training, evaluation, deployment and a feedback loop.
 
-## Why
+![The Commands page: every command the assistant heard, the closest calls first, labels and accuracy by model version](docs/img/dashboard-commands.png)
+<sub>The dashboard's Commands page on [demo data](#try-it) — made-up commands, but classified, labelled and
+retrained by the real pipeline.</sub>
 
-The goal is a full ML lifecycle — data, training, evaluation, deployment and a feedback loop — rather than a wrapper around a single LLM call. The assistant is planned as a set of independent ML subsystems wired together by a shared event bus and a common memory — intent classification with an active-learning feedback loop, a vision-language agent that acts from screenshots, OCR and categorization for expense tracking, anomaly detection for system security, a knowledge graph for long-term memory — each with its own baseline, its own evaluation, and a reason to exist on its own.
+## Results
+
+| Component | Approach | Baseline | Result | Measured on |
+|---|---|---|---|---|
+| [Wake word](aiforme/voice_orchestrator/README.md#results-wake-word) | 60k-parameter CNN on log-mel features, trained from scratch on my recordings; augmentation, hard-negative mining, synthetic whispers | v1, 10 min of room audio: 84% found, ≈12 false accepts an hour | **92%** found, **0** false accepts in 22 min of held-out audio | a test session recorded on another day, streamed through the exported ONNX model |
+| [Intent recognition](aiforme/voice_orchestrator/README.md#results-intent-recognition) | multilingual-e5 embeddings + logistic regression, 16 intents + out-of-scope, threshold chosen by cross-validation | TF-IDF character n-grams: 85.9% | **92.4%** on text, **90.0%** through speech (Whisper) | 170 held-out phrases written separately, scored once per model |
+| [Active learning](aiforme/active_learning/README.md) | uncertainty sampling for labelling; gated retraining — a candidate replaces the model only if it loses ≤ 1 test phrase and is at least as accurate on the new labels, scored out of fold | — | the gate caught a regression no unit test would: a re-tuned threshold cost 6 test phrases | the held-out phrases + my labelled commands |
+| [Vision grounding](aiforme/vision_agent/README.md) | a dataset from my own windows labelled for free by UI Automation; local Qwen2.5-VL next | UI Automation name matching: 100% on 102 tasks — an upper bound, not a result | in progress | element boxes from the accessibility tree |
+| [Mode autopilot](aiforme/mode_autopilot/README.md) | rules with hysteresis now; every 5 s of activity logged as training data for a learned model | — | running daily; data collecting | — |
+
+### What the experiments taught me
+
+- **Pretraining is what 314 examples cannot replace.** A character CNN trained from scratch reached 72.4%, below
+  TF-IDF with no training at all (85.9%); a pretrained multilingual encoder reached 92.4%. MiniLM, also multilingual,
+  managed only 68.5% on Russian commands — an encoder has to be checked on each language it will hear.
+- **The random seed moved recall more than my best idea did.** Synthetic whispers added about two whispered wake
+  words in ten, but retraining the same recipe with seeds 0, 1 and 2 gave 92%, 98% and 82% on the test session. I had
+  fixed seed 0 before the runs, so choosing seed 1 afterwards would have been tuning on the test set; averaging
+  models across seeds is the next step.
+- **A threshold re-tuned on every retraining moves by noise, and the gate noticed.** Six slang labels shifted the
+  cross-validated out-of-scope threshold from 0.20 to 0.22, and six unrelated test phrases fell out of scope. The
+  threshold is now chosen once and carried between versions, so the gate measures what the labels taught.
+- **A second speaker exposed speaker overfitting.** Trained on my voice, v3 fired on 21 of 60 of a friend's ordinary
+  commands: it had learned my voice more than the word. Adding her recordings made it worse until hard negatives
+  were mined from each source separately, with its own cap.
+- **Synthetic data alone did not transfer.** Trained only on Windows' synthetic voices, the wake word fired 13 times
+  in 2 minutes of my room.
+- **My own labels had a bug.** The list of similar-sounding negatives contained «Амадеуса нет» — the wake word
+  itself. Transcribing the negative recordings with Whisper found it; the recorder now logs the prompt behind every
+  file.
+
+Every evaluation is saved as JSON with each error in [`eval/results/`](eval/results). The limits are written next to
+the numbers in each module's README — for example, zero false accepts in 22 minutes bounds the rate at about 8 an hour
+(the rule of three), not below one.
 
 ## How it works
 
@@ -32,17 +58,23 @@ so every module can be built, tested and restarted on its own:
 
 ```mermaid
 flowchart LR
-    W[voice-orchestrator] -- intent.recognized --> B[(event bus)]
-    B -- intent.recognized --> M[mode-autopilot]
+    Mic[microphone] --> W[wake word<br>own CNN, ONNX]
+    W --> S[Whisper<br>large-v3-turbo, GPU]
+    S -- voice.transcribed --> B[(event bus<br>SQLite)]
+    B -- voice.transcribed --> I[intent classifier<br>e5 + logistic regression]
+    I -- intent.recognized --> B
+    B -- intent.* --> A[actions<br>Windows API]
+    B -- calendar.event.* --> M[mode autopilot]
     M -- mode.changed --> B
-    B -- "*" --> D[dashboard]
+    B -- "*" --> D[dashboard<br>FastAPI + React]
+    D -- labels --> L[active learning<br>gated retraining]
+    L -- intent.model_updated --> B
 ```
 
 The bus (`aiforme/core/bus.py`) is a SQLite log with one cursor per module, shared by several processes through one
 file. Delivery is at least once and in order: handling an event publishes the module's outputs and moves its cursor
 in one transaction, so a crash never loses an event or publishes its outputs twice. An exception in a module becomes a
-`system.error` event instead of blocking the queue. Basic memory (`aiforme/core/memory.py`) keeps JSON values per
-module namespace until the knowledge graph of Phase 8 replaces it.
+`system.error` event instead of blocking the queue.
 
 A module is a small class:
 
@@ -55,81 +87,95 @@ class Echo(Module):
         yield Event("pong.sent", {"reply_to": event.id})
 ```
 
-## Planned modules
+Models run locally: privacy, no per-call cost, and the ML stays mine. The vision model is reached over HTTP, so moving
+it from this PC's RTX 3060 Ti (8 GB, shared with Whisper) to a dedicated inference server is a change of address.
 
-| Module | What it will do |
-|---|---|
-| `voice-orchestrator` | Wake word + STT + intent classification → executes commands on the machine |
-| `mode-autopilot` | Detects context (coding / gaming / meeting via calendar) and switches the environment |
-| `vision-agent` | Screenshot + a vision-language model → acts in any application, not just pre-defined intents |
-| `active-learning` | Logs misclassified commands, retrains the intent classifier, tracks accuracy over time |
-| `security-watchdog` | Anomaly detection over running processes and network connections |
-| `password-vault` | Local encrypted password store with breach checks |
-| `finance-tracker` | Work shifts in the calendar → pay/tax calculation and savings goals; receipt screenshots → OCR'd, categorized expenses |
-| `learning-tracker` | Builds a topic graph from what I study (course material, tutorials), generates spaced-repetition flashcards |
-| `memory-graph` | Long-term memory as a knowledge graph (projects, people, habits), shared across modules |
-| `universal-search` | Semantic search across code, notes, clipboard history and learning material at once |
-| `dashboard` | Shows what the assistant did and why, plus finance/learning/security widgets |
-| `mobile-companion` | Push notifications and remote approval when away from the machine |
-| `resume-builder` | Drafts resume bullet points from commit history and finished modules |
+## Modules
 
-## Tech stack
+| Module | What it does | Status |
+|---|---|---|
+| [`voice_orchestrator`](aiforme/voice_orchestrator) | Wake word + Whisper + intent and slots → actions on Windows, 16 intents | done |
+| [`wakeword`](aiforme/wakeword) | Recording tool, augmentation, synthetic whispers, CNN training with hard-negative mining, ONNX detector | done, v5 |
+| [`mode_autopilot`](aiforme/mode_autopilot) | Detects coding / gaming / meeting from processes and the calendar and switches the machine | rules running; learned model waits for data |
+| [`active_learning`](aiforme/active_learning) | Labels on heard commands, uncertainty ranking, gated retraining, model versions | done; real numbers fill with use |
+| [`dashboard`](aiforme/dashboard) | Calendar, commands and labels, accuracy by version | running |
+| [`vision_agent`](aiforme/vision_agent) | Screenshot + accessibility tree → grounding dataset; VLM grounding | dataset and baseline done; VLM next |
+| `finance-tracker` | Calendar shifts → pay and tax; receipt screenshots → OCR → categorised expenses | planned |
+| `security-watchdog` | Anomaly detection over processes and network connections | planned |
+| `memory-graph`, `universal-search` | Long-term memory as a knowledge graph; one semantic search over code, notes and history | planned |
 
-In use: Python · PyTorch · ONNX Runtime · faster-whisper · sentence-transformers · scikit-learn · NumPy · SQLite · sounddevice · psutil · Windows API (ctypes) · FastAPI · React · TypeScript · Vite · FullCalendar
+The plan for the rest, with the ML approach for each module, is in [ROADMAP.md](ROADMAP.md); the modules not started
+yet have READMEs in [`modules/`](modules).
 
-Planned: a vision-language model for the screen agent · Tesseract/PaddleOCR · Chroma
+<details>
+<summary>The calendar page</summary>
 
-## Project structure
+![The dashboard's calendar: lectures, shifts and meetings; meetings switch the machine into meeting mode](docs/img/dashboard-calendar.png)
 
-| Path | Purpose |
-|---|---|
-| `aiforme/core/events.py` | The `Event` type and topic rules (`voice.transcribed`, patterns like `voice.*`) |
-| `aiforme/core/bus.py` | Event bus on SQLite: publish, per-module cursors, atomic completion |
-| `aiforme/core/module.py` | The `Module` interface and the loop that runs modules against the bus |
-| `aiforme/core/memory.py` | Basic long-term memory: JSON values under (namespace, key) |
-| `aiforme/voice_orchestrator/` | Phase 1: listener, Whisper, intent classifier, Windows actions — [its README](aiforme/voice_orchestrator/README.md) has the results |
-| `aiforme/mode_autopilot/` | Phase 2: activity sampling, mode rules, what each mode does, the activity log |
-| `aiforme/active_learning/` | Phase 3: labels on heard commands, gated retraining, model versions — [its README](aiforme/active_learning/README.md) |
-| `aiforme/calendar/` | The assistant's own calendar and the watcher that announces events on the bus |
-| `aiforme/dashboard/` | Local web UI: the calendar and the commands page; FastAPI backend, React + Vite frontend in `web/` |
-| `aiforme/wakeword/` | Own wake-word model: recording tool, synthetic data, augmentation, CNN training, ONNX detector |
-| `eval/results/` | Every evaluation as JSON, including each test error |
-| `aiforme/__main__.py` | Command line: `run` the assistant, `say` a typed command, `retrain`, publish and tail events |
-| `tests/` | pytest suite, run in CI on Windows and Linux |
-| `ROADMAP.md` | Full plan: ML approach per module, architecture, tech stack, phased build order |
-| `modules/` | READMEs of the modules not started yet; a started module moves into `aiforme/` |
-| `.env.example` | Required environment variables — copy to `.env` |
+</details>
 
-## Quick start
+## Try it
 
 Using [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv sync --all-extras          # or plain `uv sync` for the core and the tests
 uv run pytest -q
-uv run python -m aiforme run  # the voice assistant, see aiforme/voice_orchestrator/README.md
 ```
 
-Watch the bus by hand (state lives in `data/`, or in `AIFORME_DATA_DIR` if set):
+See the dashboard without a microphone or weeks of use — made-up commands, put through the real classifier, labelled
+and retrained on:
 
 ```bash
-uv run python -m aiforme publish voice.transcribed '{"text": "open the terminal"}'
-uv run python -m aiforme tail -n 20 'voice.*'
+uv run python -m aiforme demo --dir ~/aiforme-demo --embedder tfidf   # seconds; e5 is what the assistant runs
+cd aiforme/dashboard/web && npm install && npm run build && cd ../../..
+AIFORME_DATA_DIR=~/aiforme-demo uv run python -m aiforme dashboard   # http://127.0.0.1:8765
 ```
+
+The assistant itself (Windows, an NVIDIA GPU for real-time Whisper):
+
+```bash
+uv run python -m aiforme run                  # «Амадеус», then a command
+uv run python -m aiforme run --push-to-talk   # Enter instead of the wake word
+uv run python -m aiforme say "открой телеграм" # a typed command to a running assistant
+uv run python -m aiforme tail -n 20 'intent.*'
+```
+
+## Tech stack
+
+Python · PyTorch · ONNX Runtime · faster-whisper · sentence-transformers · scikit-learn · NumPy · SQLite ·
+FastAPI · React · TypeScript · Vite · Windows API (ctypes, UI Automation) · GitHub Actions (Windows and Linux)
+
+## Project structure
+
+| Path | Purpose |
+|---|---|
+| `aiforme/core/` | The event type, the SQLite event bus, the module interface and basic memory |
+| `aiforme/voice_orchestrator/` | Listener, Whisper, intent classifier, Windows actions, evaluations |
+| `aiforme/wakeword/` | Own wake-word model: recording, synthetic data, augmentation, training, ONNX detector |
+| `aiforme/mode_autopilot/` | Activity sampling, mode rules, what each mode does, the activity log |
+| `aiforme/active_learning/` | Labels, gated retraining, model versions |
+| `aiforme/calendar/` | The assistant's own calendar and the watcher that announces events on the bus |
+| `aiforme/dashboard/` | FastAPI backend; React + Vite frontend in `web/` |
+| `aiforme/vision_agent/` | Window snapshots via UI Automation, the grounding dataset, grounders and their evaluation |
+| `aiforme/demo.py` | Made-up data for the dashboard, run through the real pipeline |
+| `eval/results/` | Every evaluation as JSON, including each test error |
+| `tests/` | pytest suite, run in CI on Windows and Linux |
+| `tools/mac_recorder/` | A standalone recorder for collecting a second speaker's wake-word data |
+
+State lives in `data/` (or `AIFORME_DATA_DIR`), which git ignores: recordings, commands and window snapshots are
+personal.
 
 ## Roadmap
 
-- [x] Vision, module list, architecture and build order
-- [x] Phase 0 — repository layout, shared event bus, basic memory, CI and tests
-- [x] Phase 1 — voice orchestrator: own wake-word model, Whisper STT, 14 intents, four embeddings compared
+- [x] Phase 0 — event bus, module interface, basic memory, CI and tests
+- [x] Phase 1 — voice orchestrator: own wake-word model, Whisper STT, intents in two languages, four embeddings compared
 - [ ] Phase 2 — mode autopilot: process detection, own calendar, mode rules and voice ✔; learned mode model
-- [ ] Phase 3 — active learning loop: corrections UI, retraining, accuracy over time
-- [ ] Phase 4 — vision agent: screenshot + VLM on simple tasks, then arbitrary actions
-- [ ] Phase 5 — finance tracker: shifts → pay and tax, receipt OCR and categorization, savings goals
+- [x] Phase 3 — active learning: labelling UI, uncertainty sampling, gated retraining, accuracy by version
+- [ ] Phase 4 — vision agent: grounding dataset and baseline ✔; local VLM; the agent on the bus; multi-step tasks
+- [ ] Phase 5 — finance tracker: shifts → pay and tax, receipt OCR and categorisation, savings goals
 - [ ] Phase 6 — security watchdog and password vault
 - [ ] Phase 7 — learning tracker: topic graph, flashcards, summaries
 - [ ] Phase 8 — memory graph and universal search
 - [ ] Phase 9 — dashboard and mobile companion
 - [ ] Phase 10 — resume builder and smaller features
-
-Full detail, including the ML approach for every module, is in [ROADMAP.md](ROADMAP.md).

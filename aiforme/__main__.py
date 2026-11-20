@@ -8,6 +8,7 @@
     python -m aiforme retrain                   # the intent classifier on the commands labelled in the UI
     python -m aiforme snapshot --count 5        # the window in front, for the vision agent's dataset
     python -m aiforme vision-eval               # score a grounder on those snapshots
+    python -m aiforme demo --dir ~/aiforme-demo # made-up data to see the dashboard without weeks of use
     python -m aiforme publish voice.transcribed '{"text": "open the terminal"}'
     python -m aiforme tail -n 50 'voice.*'
 """
@@ -55,7 +56,20 @@ def main(argv: list[str] | None = None) -> int:
     snap.add_argument("--interval", type=float, default=10.0, help="seconds between snapshots")
     veval = commands.add_parser("vision-eval", help="score a grounder on the collected snapshots")
     veval.add_argument("--grounder", default="uia")
+    demo = commands.add_parser("demo", help="fill an empty directory with made-up data for the dashboard")
+    demo.add_argument("--dir", required=True, help="an empty directory; then run with AIFORME_DATA_DIR set to it")
+    demo.add_argument("--embedder", default="tfidf", choices=EMBEDDERS)
     args = parser.parse_args(argv)
+
+    if args.command == "demo":
+        from aiforme.demo import DemoExists, build
+        try:
+            build(args.dir, args.embedder)
+        except DemoExists as exc:
+            print(exc, file=sys.stderr)
+            return 1
+        print(f"Done. AIFORME_DATA_DIR={args.dir} python -m aiforme dashboard")
+        return 0
 
     if args.command == "run":
         return _run(args)
