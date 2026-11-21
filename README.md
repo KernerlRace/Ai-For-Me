@@ -23,7 +23,7 @@ retrained by the real pipeline.</sub>
 | [Wake word](aiforme/voice_orchestrator/README.md#results-wake-word) | 60k-parameter CNN on log-mel features, trained from scratch on my recordings; augmentation, hard-negative mining, synthetic whispers | v1, 10 min of room audio: 84% found, ≈12 false accepts an hour | **92%** found, **0** false accepts in 22 min of held-out audio | a test session recorded on another day, streamed through the exported ONNX model |
 | [Intent recognition](aiforme/voice_orchestrator/README.md#results-intent-recognition) | multilingual-e5 embeddings + logistic regression, 16 intents + out-of-scope, threshold chosen by cross-validation | TF-IDF character n-grams: 85.9% | **92.4%** on text, **90.0%** through speech (Whisper) | 170 held-out phrases written separately, scored once per model |
 | [Active learning](aiforme/active_learning/README.md) | uncertainty sampling for labelling; gated retraining — a candidate replaces the model only if it loses ≤ 1 test phrase and is at least as accurate on the new labels, scored out of fold | — | the gate caught a regression no unit test would: a re-tuned threshold cost 6 test phrases | the held-out phrases + my labelled commands |
-| [Vision grounding](aiforme/vision_agent/README.md) | a dataset from my own windows labelled for free by UI Automation; local Qwen2.5-VL next | UI Automation name matching: 100% on 102 tasks — an upper bound, not a result | in progress | element boxes from the accessibility tree |
+| [Vision grounding](aiforme/vision_agent/README.md#results) | local Qwen2.5-VL 7B reads the screenshot; its click is snapped to the nearest element; UI Automation answers first where a command is an element's name | UI Automation name matching: 100% when the command is the element's name, **0%** in my own words | **62.7%** in my own words (59 tasks), 0.8 s a click; the hybrid keeps 100% on names | 7 system windows, boxes labelled for free by UI Automation; 95% intervals and McNemar tests in the module README |
 | [Mode autopilot](aiforme/mode_autopilot/README.md) | rules with hysteresis now; every 5 s of activity logged as training data for a learned model | — | running daily; data collecting | — |
 
 ### What the experiments taught me
@@ -43,6 +43,10 @@ retrained by the real pipeline.</sub>
   were mined from each source separately, with its own cap.
 - **Synthetic data alone did not transfer.** Trained only on Windows' synthetic voices, the wake word fired 13 times
   in 2 minutes of my room.
+- **A local VLM declined to answer far more than it failed to see.** Allowed to answer "not visible", Qwen2.5-VL
+  did so on 43% of tasks, even on a red square on a blank image. Without that escape it found 22 points more of my
+  own commands. That same red square later showed that Ollama resizes some images itself, which had shifted every
+  File Explorer click by 9%. The grounder now measures the server's frame instead of trusting it.
 - **My own labels had a bug.** The list of similar-sounding negatives contained «Амадеуса нет» — the wake word
   itself. Transcribing the negative recordings with Whisper found it; the recorder now logs the prompt behind every
   file.

@@ -93,7 +93,7 @@ def test_evaluate_scores_hits_by_app_and_type(tmp_path):
 
 
 def test_summarize_handles_no_tasks():
-    assert summarize([]) == {"n": 0, "accuracy": 0.0, "no_answer": 0.0, "median_seconds": None,
+    assert summarize([]) == {"n": 0, "accuracy": 0.0, "no_answer": 0.0, "wrong_click": 0.0, "median_seconds": None,
                              "by_app": {}, "by_type": {}}
 
 
@@ -120,3 +120,63 @@ def test_evaluate_on_described_tasks(tmp_path):
     assert (result["task_set"], result["n"], result["accuracy"], result["no_answer"]) == ("described", 1, 0.0, 1.0)
     with pytest.raises(ValueError):
         evaluate(UiaGrounder(), store, task_set="nonsense")
+
+
+def test_a_near_miss_is_snapped_onto_the_nearest_element_and_a_hit_is_left_alone():
+    from aiforme.vision_agent.grounding import SnapToElement
+
+    class Fixed:
+        name = "fixed"
+
+        def __init__(self, point):
+            self.point = point
+
+        def locate(self, snapshot, image, instruction):
+            return self.point
+
+    toggle = Element("Wi-Fi", "Button", (100, 100, 140, 120))
+    row = Element("Сеть", "ListItem", (0, 200, 300, 240))
+    label = Element("Беспроводная сеть", "Text", (0, 100, 90, 120))       # not clickable: never a target
+    snap = Snapshot("s", 0, "", "x.exe", (400, 300), (toggle, row, label))
+    assert SnapToElement(Fixed((95, 110))).locate(snap, None, "") == toggle.center      # 5 px left of the toggle
+    assert SnapToElement(Fixed((150, 230))).locate(snap, None, "") == (150, 230)        # inside the row: as is
+    assert SnapToElement(Fixed(None)).locate(snap, None, "") is None
+    bare = Snapshot("s", 0, "", "game.exe", (400, 300))                                 # no tree: as is
+    assert SnapToElement(Fixed((95, 110))).locate(bare, None, "") == (95, 110)
+    assert SnapToElement(Fixed(None)).name == "fixed+snap"
+
+
+def test_the_hybrid_asks_ui_automation_first_and_the_model_only_when_it_declines():
+    from aiforme.vision_agent.grounding import FirstAnswer, UiaGrounder
+
+    class Model:
+        name = "model"
+        last_reply = "[]"
+
+        def __init__(self):
+            self.asked = 0
+
+        def locate(self, snapshot, image, instruction):
+            self.asked += 1
+            return (5, 5)
+
+    save = Element("Сохранить", "Button", (10, 10, 50, 30))
+    snap = Snapshot("s", 0, "", "x.exe", (400, 300), (save,))
+    model = Model()
+    hybrid = FirstAnswer(UiaGrounder(), model)
+    assert hybrid.locate(snap, None, "сохранить") == save.center and model.asked == 0
+    assert hybrid.locate(snap, None, "шестерёнка") == (5, 5) and model.asked == 1
+    assert hybrid.name == "uia-then-model"
+
+
+def test_wilson_and_mcnemar():
+    from aiforme.vision_agent.compare import mcnemar, paired, wilson
+
+    lo, hi = wilson(33, 59)
+    assert lo == pytest.approx(0.433, abs=0.002) and hi == pytest.approx(0.678, abs=0.002)
+    assert wilson(10, 10)[1] == 1.0 and wilson(0, 10)[0] == 0.0
+    assert mcnemar([False] * 13 + [True] * 46, [True] * 59) == (0, 13, pytest.approx(2 / 2 ** 13))
+    assert mcnemar([True, False], [True, False]) == (0, 0, 1.0)
+    a = {"tasks": [{"snapshot": "s", "instruction": i, "hit": h} for i, h in [("x", True), ("y", False)]]}
+    b = {"tasks": [{"snapshot": "s", "instruction": i, "hit": h} for i, h in [("y", True), ("z", True)]]}
+    assert paired(a, b) == ([False], [True])

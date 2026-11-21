@@ -55,8 +55,11 @@ def main(argv: list[str] | None = None) -> int:
     snap.add_argument("--delay", type=float, default=3.0, help="seconds to switch to the window first")
     snap.add_argument("--interval", type=float, default=10.0, help="seconds between snapshots")
     veval = commands.add_parser("vision-eval", help="score a grounder on the collected snapshots")
-    veval.add_argument("--grounder", default="uia", help="uia (the baseline) or vlm (Qwen2.5-VL via Ollama)")
+    veval.add_argument("--grounder", default="uia",
+                       help="uia (the baseline), vlm (Qwen2.5-VL via Ollama), vlm-snap (its click snapped to an "
+                            "element) or hybrid (uia, then vlm-snap)")
     veval.add_argument("--model", help="the Ollama model for --grounder vlm (default qwen2.5vl:7b)")
+    veval.add_argument("--prompt", help="the prompt for --grounder vlm: v2 (default, always a box) or v1 (may decline)")
     veval.add_argument("--limit", type=int, help="score an even sample of this many tasks")
     veval.add_argument("--tasks", default="literal", choices=("literal", "described"),
                        help="literal: the element's own name; described: commands in my own words")
@@ -84,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "snapshot":
         return _snapshot(args)
     if args.command == "vision-eval":
-        return _vision_eval(args.grounder, args.model, args.limit, args.tasks)
+        return _vision_eval(args.grounder, args.model, args.limit, args.tasks, args.prompt)
     with EventBus(bus_path()) as bus:
         if args.command == "publish":
             event = bus.publish(Event(args.topic, json.loads(args.payload), source="cli"))
@@ -225,7 +228,7 @@ def _snapshot(args) -> int:
 
 
 def _vision_eval(grounder: str, model: str | None = None, limit: int | None = None,
-                 task_set: str = "literal") -> int:
+                 task_set: str = "literal", prompt: str | None = None) -> int:
     from aiforme.vision_agent.dataset import Store
     from aiforme.vision_agent.evaluate import evaluate, report, save
     from aiforme.vision_agent.grounding import make_grounder
@@ -234,7 +237,7 @@ def _vision_eval(grounder: str, model: str | None = None, limit: int | None = No
     if not store.snapshots():
         print("No snapshots yet: take some with `python -m aiforme snapshot`.", file=sys.stderr)
         return 1
-    result = evaluate(make_grounder(grounder, model), store, limit, task_set)
+    result = evaluate(make_grounder(grounder, model, prompt), store, limit, task_set)
     print(report(result))
     print(f"every task: {save(result, vision_dir())}")
     return 0

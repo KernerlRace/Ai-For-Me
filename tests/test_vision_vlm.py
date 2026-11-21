@@ -9,7 +9,7 @@ from PIL import Image  # noqa: E402
 from aiforme.vision_agent.dataset import Element, Snapshot, Store  # noqa: E402
 from aiforme.vision_agent.evaluate import evaluate  # noqa: E402
 from aiforme.vision_agent.grounding import make_grounder  # noqa: E402
-from aiforme.vision_agent.vlm import PATCH, VlmGrounder, model_size, parse_box  # noqa: E402
+from aiforme.vision_agent.vlm import PATCH, PROBE, VlmGrounder, model_size, parse_box  # noqa: E402
 
 
 def png(width, height) -> bytes:
@@ -19,17 +19,41 @@ def png(width, height) -> bytes:
 
 
 class FakeServer:
-    """Answers like Ollama's /api/chat, with a box the test sets in the coordinates of the image it received."""
+    """Answers like Ollama's /api/chat, with a box the test sets in the coordinates of the image it received.
 
-    def __init__(self, answer):
+    `zoom` plays a server that resizes the image itself, as Ollama does with some sizes: the model then sees, and
+    answers in, an image `zoom` times larger than the one it was sent. The red probe square is found by its pixels."""
+
+    def __init__(self, answer, zoom=(1.0, 1.0)):
         self.answer = answer
+        self.zoom = zoom
         self.calls = []
 
     def __call__(self, url, payload):
         self.calls.append((url, payload))
-        image = Image.open(io.BytesIO(base64.b64decode(payload["messages"][0]["images"][0])))
-        text = self.answer(image.size) if callable(self.answer) else self.answer
-        return {"message": {"role": "assistant", "content": text}}
+        message = payload["messages"][0]
+        image = Image.open(io.BytesIO(base64.b64decode(message["images"][0]))).convert("RGB")
+        if message["content"] == PROBE:
+            red = [(x, y) for x in range(0, image.width, 2) for y in range(0, image.height, 2)
+                   if image.getpixel((x, y))[0] > 200]
+            box = (min(x for x, _ in red), min(y for _, y in red), max(x for x, _ in red), max(y for _, y in red))
+            text = f'[{{"bbox_2d": {list(box)}}}]'
+        else:
+            text = self.answer(image.size) if callable(self.answer) else self.answer
+        zx, zy = self.zoom
+        return {"message": {"role": "assistant", "content": _zoom(text, zx, zy)}}
+
+    def asked(self):
+        """The calls that were commands, not probes."""
+        return [(u, p) for u, p in self.calls if p["messages"][0]["content"] != PROBE]
+
+
+def _zoom(text, zx, zy):
+    box = parse_box(text)
+    if box is None:
+        return text
+    x0, y0, x1, y1 = box
+    return f'[{{"bbox_2d": [{x0 * zx:.0f}, {y0 * zy:.0f}, {x1 * zx:.0f}, {y1 * zy:.0f}]}}]'
 
 
 def test_model_size_is_patch_aligned_and_bounded():
@@ -61,11 +85,43 @@ def test_the_box_is_scaled_back_to_the_screenshot():
     g = VlmGrounder("qwen2.5vl:7b", url="http://box:11434/", post=server)
     x, y = g.locate(Snapshot("s", 0, "", "x.exe", (2560, 1440)), png(2560, 1440), "сохранить")
     assert abs(x - 640) <= 2 and abs(y - 720) <= 2
-    url, payload = server.calls[0]
+    url, payload = server.asked()[0]
     assert url == "http://box:11434/api/chat"
     assert payload["model"] == "qwen2.5vl:7b" and payload["options"]["temperature"] == 0
     assert "«сохранить»" in payload["messages"][0]["content"]
     assert g.last_reply.startswith('[{"bbox_2d"')
+    assert g.frames == {model_size(2560, 1440): (1.0, 1.0)}                 # a server that keeps the image: frame 1
+
+
+def test_a_server_that_resizes_the_image_is_measured_once_per_size():
+    # Ollama turns a 1904×364 image into about 2072×392 and the model answers in those pixels
+    def answer(size):                       # the element is the box (1500, 100)–(1540, 140) of the image sent
+        return '[{"bbox_2d": [1500, 100, 1540, 140]}]'
+
+    server = FakeServer(answer, zoom=(2072 / 1904, 392 / 364))
+    g = VlmGrounder(post=server)
+    snap = Snapshot("s", 0, "", "explorer.exe", (1906, 362))
+    for _ in range(3):
+        x, y = g.locate(snap, png(1906, 362), "обновить")
+        assert abs(x - 1520) <= 3 and abs(y - 120) <= 3                # where it is, not 9% to the right
+    assert len(server.calls) == 4                                    # one probe, three commands
+    assert g.frames[(1904, 364)][0] == pytest.approx(2072 / 1904, abs=0.01)
+
+    raw = VlmGrounder(post=FakeServer(answer, zoom=(2072 / 1904, 392 / 364)), calibrate=False)
+    x, _ = raw.locate(snap, png(1906, 362), "обновить")
+    assert x > 1600                                                  # trusting the server's frame misses
+    assert raw.name == "vlm-qwen2.5vl-7b-v2-raw"
+
+
+def test_the_v1_prompt_lets_the_model_decline_and_v2_does_not():
+    v1, v2 = FakeServer("[]"), FakeServer("[]")
+    snap = Snapshot("s", 0, "", "x.exe", (400, 300))
+    VlmGrounder(prompt="v1", post=v1).locate(snap, png(400, 300), "x")
+    VlmGrounder(prompt="v2", post=v2).locate(snap, png(400, 300), "x")
+    assert "output []" in v1.asked()[0][1]["messages"][0]["content"]
+    assert "output []" not in v2.asked()[0][1]["messages"][0]["content"]
+    with pytest.raises(ValueError):
+        VlmGrounder(prompt="v9")
 
 
 def test_no_box_or_a_box_off_the_image_is_no_click():
@@ -81,7 +137,8 @@ def test_the_address_comes_from_the_environment(monkeypatch):
     assert VlmGrounder().url == "http://inference-server:11434"
     monkeypatch.delenv("AIFORME_VLM_URL")
     assert VlmGrounder().url == "http://127.0.0.1:11434"              # never localhost: IPv6 first on Windows
-    assert make_grounder("vlm", "qwen2.5vl:3b").name == "vlm-qwen2.5vl-3b"
+    assert make_grounder("vlm", "qwen2.5vl:3b").name == "vlm-qwen2.5vl-3b-v2"
+    assert make_grounder("vlm", None, "v1").name == "vlm-qwen2.5vl-7b-v1"
 
 
 def test_evaluation_keeps_the_models_replies_and_can_sample(tmp_path):
@@ -97,4 +154,7 @@ def test_evaluation_keeps_the_models_replies_and_can_sample(tmp_path):
     assert result["n"] == 5
     assert [t["instruction"] for t in result["tasks"]] == ["Кнопка 0", "Кнопка 2", "Кнопка 4", "Кнопка 6", "Кнопка 8"]
     assert result["accuracy"] == pytest.approx(0.2)
+    assert result["wrong_click"] == pytest.approx(0.8)               # always the first button: 4 of 5 land wrong
+    w, h = model_size(400, 300)
+    assert result["frames"] == {f"{w}x{h}": [1.0, 1.0]}
     assert all(t["reply"].startswith("[{") for t in result["tasks"])

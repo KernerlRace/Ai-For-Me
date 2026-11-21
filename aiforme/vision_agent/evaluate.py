@@ -45,16 +45,20 @@ def evaluate(grounder: Grounder, store: Store, limit: int | None = None, task_se
         if hasattr(grounder, "last_reply"):             # a model's raw answer: what to read when it misses
             row["reply"] = grounder.last_reply
         outcomes.append(row)
-    return {"grounder": grounder.name, "task_set": task_set, "snapshots": len(snapshots), **summarize(outcomes),
-            "tasks": outcomes}
+    result = {"grounder": grounder.name, "task_set": task_set, "snapshots": len(snapshots), **summarize(outcomes)}
+    if getattr(grounder, "frames", None):              # the server's coordinate frame per image size, as measured
+        result["frames"] = {f"{w}x{h}": list(scale) for (w, h), scale in grounder.frames.items()}
+    return {**result, "tasks": outcomes}
 
 
 def summarize(outcomes: list[dict]) -> dict:
-    """Accuracy (a hit counts), how often it gave no answer at all, latency, and accuracy per app and per type."""
+    """Accuracy (a hit counts), how often it gave no answer at all, how often it clicked somewhere wrong, latency,
+    and the same per app and per type."""
     def score(rows):
         n = len(rows)
         return {"n": n, "accuracy": sum(r["hit"] for r in rows) / n if n else 0.0,
-                "no_answer": sum(r["point"] is None for r in rows) / n if n else 0.0}
+                "no_answer": sum(r["point"] is None for r in rows) / n if n else 0.0,
+                "wrong_click": sum(r["point"] is not None and not r["hit"] for r in rows) / n if n else 0.0}
 
     by = {"app": defaultdict(list), "type": defaultdict(list)}
     for r in outcomes:
@@ -72,7 +76,8 @@ def summarize(outcomes: list[dict]) -> dict:
 def report(result: dict) -> str:
     lines = [f"{result['grounder']} on {result.get('task_set', 'literal')} tasks: {result['accuracy']:.1%} "
              f"of {result['n']} tasks from {result['snapshots']} "
-             f"snapshots; no answer {result['no_answer']:.1%}; median {result['median_seconds'] or 0:.3f}s"]
+             f"snapshots; no answer {result['no_answer']:.1%}; wrong click {result.get('wrong_click', 0):.1%}; "
+             f"median {result['median_seconds'] or 0:.3f}s"]
     for group in ("by_app", "by_type"):
         lines.append(f"  {group[3:]}:")
         lines += [f"    {k:28} {v['accuracy']:6.1%} of {v['n']}" for k, v in result[group].items()]
