@@ -1,6 +1,7 @@
 """Grounding: a described element → the point on the screen to click.
 
     UiaGrounder   the baseline, no ML: the instruction matched against the names UI Automation reports
+    VlmGrounder   a vision-language model reading the screenshot (vlm.py)
 
 A grounder sees the snapshot — its image and its elements — and returns a point in the image's pixels, or None
 when it finds nothing good enough; a wrong click costs more than "I couldn't find it".
@@ -62,10 +63,13 @@ class UiaGrounder:
         return element.center if element is not None and score >= self.min_similarity else None
 
 
-def make_grounder(name: str) -> Grounder:
+def make_grounder(name: str, model: str | None = None) -> Grounder:
     if name == "uia":
         return UiaGrounder()
+    if name == "vlm":
+        from aiforme.vision_agent.vlm import VlmGrounder
+        return VlmGrounder(model) if model else VlmGrounder()
     raise ValueError(f"unknown grounder {name!r}: expected one of {GROUNDERS}")
 
 
-GROUNDERS = ("uia",)
+GROUNDERS = ("uia", "vlm")

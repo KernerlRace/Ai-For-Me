@@ -1,7 +1,8 @@
 """Scores a grounder on the collected snapshots: does its click land inside the element the instruction names?
 
     python -m aiforme vision-eval                  # the UI Automation baseline
-    python -m aiforme vision-eval --grounder uia
+    python -m aiforme vision-eval --grounder vlm  # Qwen2.5-VL through Ollama
+    python -m aiforme vision-eval --grounder vlm --model qwen2.5vl:3b --limit 20
 
 Prints accuracy overall, by app and by control type, and writes every task's outcome to
 data/vision/reports/<grounder>-<time>.json. Reports stay in the data directory, never in the repository: the
@@ -19,16 +20,24 @@ from aiforme.vision_agent.dataset import Store, tasks
 from aiforme.vision_agent.grounding import Grounder
 
 
-def evaluate(grounder: Grounder, store: Store) -> dict:
+def evaluate(grounder: Grounder, store: Store, limit: int | None = None) -> dict:
+    """`limit` takes every k-th task so that a quick run still covers every snapshot, not just the first."""
     snapshots = {s.id: s for s in store.snapshots()}
+    chosen = tasks(snapshots.values())
+    if limit and len(chosen) > limit:
+        step = len(chosen) / limit
+        chosen = [chosen[int(i * step)] for i in range(limit)]
     outcomes = []
-    for task in tasks(snapshots.values()):
+    for task in chosen:
         image = store.image(task.snapshot)
         png = image.read_bytes() if image.exists() else None
         t0 = time.perf_counter()
         point = grounder.locate(snapshots[task.snapshot], png, task.instruction)
         seconds = time.perf_counter() - t0
-        outcomes.append({**asdict(task), "point": point, "hit": task.hit(point), "seconds": seconds})
+        row = {**asdict(task), "point": point, "hit": task.hit(point), "seconds": seconds}
+        if hasattr(grounder, "last_reply"):             # a model's raw answer: what to read when it misses
+            row["reply"] = grounder.last_reply
+        outcomes.append(row)
     return {"grounder": grounder.name, "snapshots": len(snapshots), **summarize(outcomes), "tasks": outcomes}
 
 

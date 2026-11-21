@@ -12,7 +12,7 @@ server with a larger model will only change one address.
 |---|---|---|
 | 1 | A grounding dataset from my own windows, labelled by UI Automation | done |
 | 2 | The baseline: UI Automation names, no ML | done |
-| 3 | A local VLM (Qwen2.5-VL) on the same tasks | next |
+| 3 | A local VLM (Qwen2.5-VL) on the same tasks | grounder written and tested; first scores next |
 | 4 | The agent on the bus: command → find → click | |
 | 5 | Multi-step tasks, on a larger model | later |
 
@@ -50,3 +50,26 @@ these tasks it is close to an upper bound. The first run hit 98%: the window's *
 What it cannot do is the point of step 3: an icon without a name, a canvas, a game, a web page that hides its tree,
 and any description that is not the element's name — *«нажми на шестерёнку»*. Commands in my own words, written
 against the same snapshots, come with step 3.
+
+## The VLM grounder
+
+`VlmGrounder` ([`vlm.py`](vlm.py)) sends the screenshot and the instruction to Qwen2.5-VL through Ollama:
+
+- **What it asks for.** The element's box as `bbox_2d`, the format the model was trained to ground in. The click is
+  the box's centre.
+- **Resizing.** The model sees an image as 28×28 patches. The screenshot is resized on this side to the size the
+  model would pick itself: both sides multiples of 28, about a megapixel at most. The answer is then scaled back.
+  So the coordinates do not depend on how a given server version would have resized the image.
+- **No guessing.** An empty answer or a box off the image is no click. A server that cannot be reached is an error,
+  not a miss.
+- **Where the server is.** `AIFORME_VLM_URL` sets the address, default `http://127.0.0.1:11434`. It is not
+  `localhost`: on Windows that tries IPv6 first, and a server listening on IPv4 only then answers late. Moving the
+  model to the inference server is a change of this one variable.
+
+```bash
+ollama pull qwen2.5vl:7b
+uv run python -m aiforme vision-eval --grounder vlm --limit 30   # a quick, even sample
+uv run python -m aiforme vision-eval --grounder vlm              # every task
+```
+
+Every task's raw model answer is saved in the report next to its click, so each miss can be read.
