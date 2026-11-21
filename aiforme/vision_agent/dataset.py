@@ -11,6 +11,7 @@ UI Automation baseline, which reads the same names, is all but an upper bound on
 
     data/vision/snapshots.jsonl     one snapshot per line
     data/vision/<snapshot id>.png   its image
+    data/vision/described.tsv       described tasks: snapshot id, element index, a command in my own words
 """
 from __future__ import annotations
 
@@ -107,12 +108,31 @@ def tasks(snapshots: Iterable[Snapshot]) -> list[Task]:
     return [Task(s.id, e.name.strip(), e.box, e.type, s.process) for s in snapshots for e in targets(s)]
 
 
+def described_tasks(snapshots: Iterable[Snapshot], path: Path) -> list[Task]:
+    """Commands that do not say the element's name — «нажми на шестерёнку», «тумблер авиарежима» — each pointing at
+    one element of a snapshot by its index. A line whose snapshot is missing or whose index is out of range is an
+    error, not a skip: a silently shorter test set would read as a better score."""
+    by_id = {s.id: s for s in snapshots}
+    out = []
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        snapshot_id, index, instruction = line.split("	")
+        snapshot = by_id.get(snapshot_id)
+        if snapshot is None or not 0 <= int(index) < len(snapshot.elements):
+            raise ValueError(f"{path.name}:{number}: no element {index} in snapshot {snapshot_id}")
+        e = snapshot.elements[int(index)]
+        out.append(Task(snapshot_id, instruction.strip(), e.box, e.type, snapshot.process))
+    return out
+
+
 class Store:
     """The snapshots on disk: appended one line at a time, so a crash mid-collection loses one at most."""
 
     def __init__(self, root: str | Path):
         self.root = Path(root)
         self.index = self.root / "snapshots.jsonl"
+        self.described = self.root / "described.tsv"
 
     def image(self, snapshot_id: str) -> Path:
         return self.root / f"{snapshot_id}.png"

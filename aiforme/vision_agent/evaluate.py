@@ -3,6 +3,7 @@
     python -m aiforme vision-eval                  # the UI Automation baseline
     python -m aiforme vision-eval --grounder vlm  # Qwen2.5-VL through Ollama
     python -m aiforme vision-eval --grounder vlm --model qwen2.5vl:3b --limit 20
+    python -m aiforme vision-eval --tasks described   # commands in my own words, not the element's name
 
 Prints accuracy overall, by app and by control type, and writes every task's outcome to
 data/vision/reports/<grounder>-<time>.json. Reports stay in the data directory, never in the repository: the
@@ -16,14 +17,20 @@ from collections import defaultdict
 from dataclasses import asdict
 from pathlib import Path
 
-from aiforme.vision_agent.dataset import Store, tasks
+from aiforme.vision_agent.dataset import Store, described_tasks, tasks
 from aiforme.vision_agent.grounding import Grounder
 
 
-def evaluate(grounder: Grounder, store: Store, limit: int | None = None) -> dict:
-    """`limit` takes every k-th task so that a quick run still covers every snapshot, not just the first."""
+def evaluate(grounder: Grounder, store: Store, limit: int | None = None, task_set: str = "literal") -> dict:
+    """`task_set` is "literal" (the instruction is the element's name) or "described" (my own words, from
+    described.tsv). `limit` takes every k-th task so that a quick run still covers every snapshot."""
     snapshots = {s.id: s for s in store.snapshots()}
-    chosen = tasks(snapshots.values())
+    if task_set == "literal":
+        chosen = tasks(snapshots.values())
+    elif task_set == "described":
+        chosen = described_tasks(snapshots.values(), store.described)
+    else:
+        raise ValueError(f"unknown task set {task_set!r}: expected literal or described")
     if limit and len(chosen) > limit:
         step = len(chosen) / limit
         chosen = [chosen[int(i * step)] for i in range(limit)]
@@ -38,7 +45,8 @@ def evaluate(grounder: Grounder, store: Store, limit: int | None = None) -> dict
         if hasattr(grounder, "last_reply"):             # a model's raw answer: what to read when it misses
             row["reply"] = grounder.last_reply
         outcomes.append(row)
-    return {"grounder": grounder.name, "snapshots": len(snapshots), **summarize(outcomes), "tasks": outcomes}
+    return {"grounder": grounder.name, "task_set": task_set, "snapshots": len(snapshots), **summarize(outcomes),
+            "tasks": outcomes}
 
 
 def summarize(outcomes: list[dict]) -> dict:
@@ -62,7 +70,8 @@ def summarize(outcomes: list[dict]) -> dict:
 
 
 def report(result: dict) -> str:
-    lines = [f"{result['grounder']}: {result['accuracy']:.1%} of {result['n']} tasks from {result['snapshots']} "
+    lines = [f"{result['grounder']} on {result.get('task_set', 'literal')} tasks: {result['accuracy']:.1%} "
+             f"of {result['n']} tasks from {result['snapshots']} "
              f"snapshots; no answer {result['no_answer']:.1%}; median {result['median_seconds'] or 0:.3f}s"]
     for group in ("by_app", "by_type"):
         lines.append(f"  {group[3:]}:")
@@ -71,7 +80,8 @@ def report(result: dict) -> str:
 
 
 def save(result: dict, root: Path) -> Path:
-    out = root / "reports" / f"{result['grounder']}-{time.strftime('%Y%m%d-%H%M%S')}.json"
+    name = f"{result['grounder']}-{result.get('task_set', 'literal')}-{time.strftime('%Y%m%d-%H%M%S')}.json"
+    out = root / "reports" / name
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     return out

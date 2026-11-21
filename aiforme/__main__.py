@@ -58,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
     veval.add_argument("--grounder", default="uia", help="uia (the baseline) or vlm (Qwen2.5-VL via Ollama)")
     veval.add_argument("--model", help="the Ollama model for --grounder vlm (default qwen2.5vl:7b)")
     veval.add_argument("--limit", type=int, help="score an even sample of this many tasks")
+    veval.add_argument("--tasks", default="literal", choices=("literal", "described"),
+                       help="literal: the element's own name; described: commands in my own words")
     demo = commands.add_parser("demo", help="fill an empty directory with made-up data for the dashboard")
     demo.add_argument("--dir", required=True, help="an empty directory; then run with AIFORME_DATA_DIR set to it")
     demo.add_argument("--embedder", default="tfidf", choices=EMBEDDERS)
@@ -82,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "snapshot":
         return _snapshot(args)
     if args.command == "vision-eval":
-        return _vision_eval(args.grounder, args.model, args.limit)
+        return _vision_eval(args.grounder, args.model, args.limit, args.tasks)
     with EventBus(bus_path()) as bus:
         if args.command == "publish":
             event = bus.publish(Event(args.topic, json.loads(args.payload), source="cli"))
@@ -222,7 +224,8 @@ def _snapshot(args) -> int:
     return 0
 
 
-def _vision_eval(grounder: str, model: str | None = None, limit: int | None = None) -> int:
+def _vision_eval(grounder: str, model: str | None = None, limit: int | None = None,
+                 task_set: str = "literal") -> int:
     from aiforme.vision_agent.dataset import Store
     from aiforme.vision_agent.evaluate import evaluate, report, save
     from aiforme.vision_agent.grounding import make_grounder
@@ -231,7 +234,7 @@ def _vision_eval(grounder: str, model: str | None = None, limit: int | None = No
     if not store.snapshots():
         print("No snapshots yet: take some with `python -m aiforme snapshot`.", file=sys.stderr)
         return 1
-    result = evaluate(make_grounder(grounder, model), store, limit)
+    result = evaluate(make_grounder(grounder, model), store, limit, task_set)
     print(report(result))
     print(f"every task: {save(result, vision_dir())}")
     return 0

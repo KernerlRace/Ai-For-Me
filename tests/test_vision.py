@@ -95,3 +95,28 @@ def test_evaluate_scores_hits_by_app_and_type(tmp_path):
 def test_summarize_handles_no_tasks():
     assert summarize([]) == {"n": 0, "accuracy": 0.0, "no_answer": 0.0, "median_seconds": None,
                              "by_app": {}, "by_type": {}}
+
+
+def test_described_tasks_point_at_elements_and_fail_loudly(tmp_path):
+    from aiforme.vision_agent.dataset import described_tasks
+
+    path = tmp_path / "described.tsv"
+    path.write_text("# snapshot\telement\tinstruction\n\ns1\t4\tгалочка тёмного режима\ns1\t0\tдискетка\n",
+                    encoding="utf-8")
+    assert described_tasks([SNAP], path) == [
+        Task("s1", "галочка тёмного режима", (10, 100, 120, 120), "CheckBox", "Settings.exe"),
+        Task("s1", "дискетка", (10, 10, 90, 40), "Button", "Settings.exe"),
+    ]
+    path.write_text("s1\t99\tнет такого\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no element 99"):
+        described_tasks([SNAP], path)
+
+
+def test_evaluate_on_described_tasks(tmp_path):
+    store = Store(tmp_path)
+    store.add(SNAP, b"")
+    store.described.write_text("s1\t0\tдискетка\n", encoding="utf-8")
+    result = evaluate(UiaGrounder(), store, task_set="described")
+    assert (result["task_set"], result["n"], result["accuracy"], result["no_answer"]) == ("described", 1, 0.0, 1.0)
+    with pytest.raises(ValueError):
+        evaluate(UiaGrounder(), store, task_set="nonsense")
