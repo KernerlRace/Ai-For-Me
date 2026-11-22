@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { t } from "./i18n";
 
 export interface AccuracyPoint {
   version: number;
@@ -7,8 +8,8 @@ export interface AccuracyPoint {
 }
 
 const SERIES = [
-  { key: "test", name: "Тестовые фразы", color: "var(--series-1)" },
-  { key: "live", name: "Мои команды", color: "var(--series-2)" },
+  { key: "test", name: t.chart.test, color: "var(--series-1)" },
+  { key: "live", name: t.chart.live, color: "var(--series-2)" },
 ] as const;
 
 const W = 640, H = 220, PAD = { top: 14, right: 64, bottom: 28, left: 40 };
@@ -31,7 +32,7 @@ export function AccuracyChart({ points }: { points: AccuracyPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
 
   const values = points.flatMap((p) => SERIES.map((s) => value(p, s.key))).filter((v): v is number => v !== null);
-  if (!values.length) return <p className="muted">График появится, когда будут метки или первое переобучение.</p>;
+  if (!values.length) return <p className="muted">{t.chart.empty}</p>;
 
   const lo = Math.max(0, Math.floor((Math.min(...values) - 0.05) * 10) / 10);
   const x = (i: number) => PAD.left + (points.length === 1 ? (W - PAD.left - PAD.right) / 2
@@ -69,7 +70,7 @@ export function AccuracyChart({ points }: { points: AccuracyPoint[] }) {
           <span key={s.key}><i style={{ background: s.color }} />{s.name}</span>
         ))}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Точность по версиям модели">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t.chart.aria}>
         {ticks.map((t) => (
           <g key={t}>
             <line className="grid" x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} />
@@ -101,14 +102,14 @@ export function AccuracyChart({ points }: { points: AccuracyPoint[] }) {
       </svg>
       {h && (
         <div className="tooltip" style={tooltipAt(x(hover!) / W)}>
-          <b>Версия {h.version}</b>
+          <b>{t.chart.version(h.version)}</b>
           {SERIES.map((s) => {
             const v = value(h, s.key);
             return (
               <div key={s.key}>
                 <i style={{ background: s.color }} />
                 <strong>{v === null ? "—" : pct(v)}</strong> {s.name}
-                {s.key === "live" && h.live ? <span className="muted"> ({h.live.correct} из {h.live.labelled})</span> : null}
+                {s.key === "live" && h.live ? <span className="muted"> ({t.chart.outOf(h.live.correct, h.live.labelled)})</span> : null}
               </div>
             );
           })}

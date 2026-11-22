@@ -13,8 +13,9 @@ Each part has a baseline, a held-out evaluation and a write-up of what went wron
 lifecycle: data, training, evaluation, deployment and a feedback loop.
 
 ![The Commands page: every command the assistant heard, the closest calls first, labels and accuracy by model version](docs/img/dashboard-commands.png)
-<sub>The dashboard's Commands page on [demo data](#try-it) — made-up commands, but classified, labelled and
-retrained by the real pipeline.</sub>
+<sub>The dashboard's Commands page on [demo data](#try-it): made-up commands, but classified, labelled and
+retrained by the real pipeline. The UI is in English by default, with an EN/RU switch; the demo commands come in
+either language (`--lang ru`), since the classifier is trained on both.</sub>
 
 ## Results
 
@@ -132,6 +133,7 @@ and retrained on:
 
 ```bash
 uv run python -m aiforme demo --dir ~/aiforme-demo --embedder tfidf   # seconds; e5 is what the assistant runs
+                                                                        # --lang ru: the commands in Russian
 cd aiforme/dashboard/web && npm install && npm run build && cd ../../..
 AIFORME_DATA_DIR=~/aiforme-demo uv run python -m aiforme dashboard   # http://127.0.0.1:8765
 ```

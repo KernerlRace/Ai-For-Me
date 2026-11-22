@@ -1,4 +1,5 @@
 // The calendar API (aiforme/dashboard/server.py). Times go both ways as local "YYYY-MM-DDTHH:mm" strings.
+import { t } from "./i18n";
 
 export type Kind = "meeting" | "shift" | "other";
 
@@ -13,11 +14,7 @@ export interface CalendarEvent {
 
 export type EventInput = Omit<CalendarEvent, "id">;
 
-export const KIND_LABELS: Record<Kind, string> = {
-  meeting: "Встреча",
-  shift: "Смена",
-  other: "Другое",
-};
+export const KIND_LABELS: Record<Kind, string> = t.kinds;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -117,32 +114,9 @@ export interface Learning {
   live: { model: number; labelled: number; correct: number }[];
 }
 
-export const INTENT_LABELS: Record<string, string> = {
-  open_app: "Открыть приложение",
-  close_app: "Закрыть приложение",
-  find_file: "Найти файл",
-  dictate: "Надиктовать текст",
-  web_search: "Поиск в интернете",
-  volume_up: "Громче",
-  volume_down: "Тише",
-  mute: "Без звука",
-  media_play_pause: "Пауза / продолжить",
-  media_next: "Следующий трек",
-  screenshot: "Скриншот",
-  lock_screen: "Заблокировать экран",
-  tell_time: "Который час",
-  cancel: "Отмена",
-  set_mode: "Сменить режим",
-  agenda: "Планы на сегодня",
-  out_of_scope: "Не команда",
-};
+export const INTENT_LABELS: Record<string, string> = t.intents;
 
-export const SLOT_LABELS: Record<string, string> = {
-  app: "Приложение",
-  query: "Что искать",
-  text: "Текст",
-  mode: "Режим",
-};
+export const SLOT_LABELS: Record<string, string> = t.slots;
 
 export const learningApi = {
   commands: (order: CommandOrder, limit = 100) => request<Command[]>(`/api/commands?limit=${limit}&order=${order}`),

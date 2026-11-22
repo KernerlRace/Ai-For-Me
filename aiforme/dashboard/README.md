@@ -5,9 +5,13 @@ app on one port, http://127.0.0.1:8765 — local only, no accounts.
 
 | Page | What it shows |
 |---|---|
-| Calendar | Day, week and month views in Russian; drag over empty time to create, drag or stretch to move, click to edit; events coloured by kind — meeting, shift, other |
+| Calendar | Day, week and month views; drag over empty time to create, drag or stretch to move, click to edit; events coloured by kind — meeting, shift, other |
 | Commands | Every command the assistant heard and what it understood; mark it right or correct it, retrain the intent classifier on the labels, and follow its accuracy by version — [active learning](../active_learning) |
-| Header | The mode the [autopilot](../mode_autopilot) is in, and why on hover |
+| Header | The mode the [autopilot](../mode_autopilot) is in, and why on hover; an EN/RU language switch |
+
+**Language.** English by default, so anyone can read it; Russian is one click away, or `?lang=ru` in the address. The
+choice is remembered in the browser. Every UI string lives in [`web/src/i18n.ts`](web/src/i18n.ts), one dictionary
+per language with the same keys, so TypeScript refuses a build where one language misses a string.
 
 Planned as their phases land: the log of what the assistant did and why, finance and learning widgets, security
 alerts.

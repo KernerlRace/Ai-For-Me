@@ -66,12 +66,14 @@ def main(argv: list[str] | None = None) -> int:
     demo = commands.add_parser("demo", help="fill an empty directory with made-up data for the dashboard")
     demo.add_argument("--dir", required=True, help="an empty directory; then run with AIFORME_DATA_DIR set to it")
     demo.add_argument("--embedder", default="tfidf", choices=EMBEDDERS)
+    demo.add_argument("--lang", default="en", choices=("en", "ru"),
+                      help="the language of the made-up commands and calendar (the dashboard has its own EN/RU switch)")
     args = parser.parse_args(argv)
 
     if args.command == "demo":
         from aiforme.demo import DemoExists, build
         try:
-            build(args.dir, args.embedder)
+            build(args.dir, args.embedder, lang=args.lang)
         except DemoExists as exc:
             print(exc, file=sys.stderr)
             return 1

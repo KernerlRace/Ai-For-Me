@@ -2,12 +2,16 @@
 
     python -m aiforme demo --dir ~/aiforme-demo                  # e5, as the assistant runs
     python -m aiforme demo --dir ~/aiforme-demo --embedder tfidf  # seconds, no model download
+    python -m aiforme demo --dir ~/aiforme-demo --lang ru         # the commands in Russian, as I speak to it
     AIFORME_DATA_DIR=~/aiforme-demo python -m aiforme dashboard
 
 Everything in it is made up — the calendar, the commands — but nothing is faked downstream of the commands: each one
 goes through the real intent classifier, the labels go into the real feedback store, and the versions on the
 Commands page come from the real gated retraining. Two rounds: the first commands are heard by version 0, labelled
-and retrained on; the next ones by whatever version that produced, some labelled, some left for «Сначала спорные».
+and retrained on; the next ones by whatever version that produced, some labelled, some left for "Uncertain first".
+
+The commands come in English (the default, so anyone can read the dashboard) or in Russian. Half of the intent
+model's training phrases are English, so the English set is no easier for it.
 
 It refuses a directory that already holds a bus, so it never mixes into real data.
 """
@@ -74,6 +78,54 @@ SECOND: list[Command] = [
     ("дай мне минутку", None, None),
 ]
 
+# the same story in English: everyday commands, slang the hand-written data lacks, and phrasings it never saw
+FIRST_EN: list[Command] = [
+    ("open telegram", "open_app", "telegram"),
+    ("launch discord", "open_app", "discord"),
+    ("boot up discord", "open_app", "discord"),
+    ("pull up spotify", "open_app", "spotify"),
+    ("spin up telegram", "open_app", "telegram"),
+    ("open visual studio code", "open_app", "visual studio code"),
+    ("close chrome", "close_app", "chrome"),
+    ("shut discord", "close_app", "discord"),
+    ("close steam", "close_app", "steam"),
+    ("find my coursework file", "find_file", "coursework"),
+    ("google the pound exchange rate", "web_search", "the pound exchange rate"),
+    ("search for amazon applied scientist internship", "web_search", "amazon applied scientist internship"),
+    ("turn it up", "volume_up", None),
+    ("bit quieter", "volume_down", None),
+    ("kill the sound", "mute", None),
+    ("pause it", "media_play_pause", None),
+    ("resume the video", "media_play_pause", None),
+    ("skip this song", "media_next", None),
+    ("what time is it", "tell_time", None),
+    ("what's on my calendar today", "agenda", None),
+    ("what have i got today", "agenda", None),
+    ("gaming mode", "set_mode", "gaming"),
+    ("lock my pc", "lock_screen", None),
+    ("grab a screenshot", "screenshot", None),
+    ("never mind", "cancel", None),
+    ("open the window in my room", "out_of_scope", None),
+    ("what's the weather in winchester tomorrow", "web_search", "the weather in winchester tomorrow"),
+]
+
+SECOND_EN: list[Command] = [
+    ("spin up telegram", "open_app", "telegram"),
+    ("boot up steam", "open_app", "steam"),
+    ("shut telegram", "close_app", "telegram"),
+    ("coding mode", "set_mode", "coding"),
+    ("turn it down a bit", "volume_down", None),
+    ("put some music on", "media_play_pause", None),
+    ("type hello how are you", "dictate", "hello how are you"),
+    ("switch to meeting mode", "set_mode", "meeting"),
+    ("next one please", None, None),
+    ("show me my calendar", None, None),
+    ("turn it down and pause", None, None),
+    ("add buy milk to my notes", None, None),
+    ("turn on the lights", None, None),
+    ("give me a minute", None, None),
+]
+
 # (day of the week from Monday, start, end, title, kind)
 WEEK = [
     (0, "10:00", "12:00", "Machine Learning lecture", "other"),
@@ -89,11 +141,21 @@ WEEK = [
 ]
 
 
+WEEK_EN = [(d, a, b, {"Смена": "Shift", "Стендап": "Stand-up", "Placement: наставник": "Placement: mentor"}
+            .get(title, title), kind) for d, a, b, title, kind in WEEK]
+
+DEMOS = {"en": (FIRST_EN, SECOND_EN, WEEK_EN), "ru": (FIRST, SECOND, WEEK)}
+
+
 class DemoExists(Exception):
     """The directory already holds a bus: it may be real data."""
 
 
-def build(directory: str | Path, embedder: str = "tfidf", today: datetime | None = None, log=print) -> dict:
+def build(directory: str | Path, embedder: str = "tfidf", today: datetime | None = None, log=print,
+          lang: str = "en") -> dict:
+    if lang not in DEMOS:
+        raise ValueError(f"unknown language {lang!r}: expected one of {tuple(DEMOS)}")
+    first, second, week = DEMOS[lang]
     root = Path(directory).expanduser()
     if (root / "bus.sqlite3").exists():
         raise DemoExists(f"{root} already holds a bus; pick an empty directory")
@@ -102,7 +164,7 @@ def build(directory: str | Path, embedder: str = "tfidf", today: datetime | None
 
     with Calendar(root / "calendar.sqlite3") as calendar:
         monday = datetime.combine((today - timedelta(days=today.weekday())).date(), time())
-        for day, start, end, title, kind in WEEK:
+        for day, start, end, title, kind in week:
             calendar.add(title, monday + timedelta(days=day, hours=_h(start)),
                          monday + timedelta(days=day, hours=_h(end)), kind)
 
@@ -111,7 +173,7 @@ def build(directory: str | Path, embedder: str = "tfidf", today: datetime | None
         bus.publish(Event("mode.changed", {"mode": "coding", "previous": "normal", "actions": [],
                                            "reason": "an IDE or a terminal in front 80% of the last five minutes"},
                           source="mode_autopilot"))
-        for round_no, commands in enumerate((FIRST, SECOND), start=1):
+        for round_no, commands in enumerate((first, second), start=1):
             classifier, version = current_model(feedback, embedder)
             log(f"round {round_no}: {len(commands)} commands heard by version {version} ({embedder})")
             module = IntentModule(classifier, version)

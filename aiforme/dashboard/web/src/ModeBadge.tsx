@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
+import { t } from "./i18n";
 
 type Mode = "normal" | "coding" | "gaming" | "meeting";
 
-const LABELS: Record<Mode, string> = {
-  normal: "Обычный режим",
-  coding: "Кодинг",
-  gaming: "Игровой режим",
-  meeting: "Встреча",
-};
+const LABELS: Record<string, string> = t.modes;
 
 /** The autopilot's current mode, refreshed every 10 s; hidden until the assistant has chosen one. */
 export function ModeBadge() {

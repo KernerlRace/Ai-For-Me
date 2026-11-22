@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { KIND_LABELS, type EventInput, type Kind } from "./api";
+import { t } from "./i18n";
 
 interface Props {
   initial: EventInput;
@@ -46,16 +47,16 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Props
           run(() => onSave({ ...form, title: form.title.trim() }));
         }}
       >
-        <h2>{isNew ? "Новое событие" : "Событие"}</h2>
+        <h2>{isNew ? t.dialog.newEvent : t.dialog.event}</h2>
 
         <label>
-          Название
+          {t.dialog.title}
           <input ref={title} value={form.title} onChange={(e) => set("title", e.target.value)} required
-                 maxLength={200} placeholder="Например, созвон с командой" />
+                 maxLength={200} placeholder={t.dialog.titlePlaceholder} />
         </label>
 
         <fieldset className="kinds">
-          <legend>Тип</legend>
+          <legend>{t.dialog.kind}</legend>
           {(Object.keys(KIND_LABELS) as Kind[]).map((kind) => (
             <label key={kind} className={`kind kind-${kind}`}>
               <input type="radio" name="kind" checked={form.kind === kind} onChange={() => set("kind", kind)} />
@@ -66,19 +67,19 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Props
 
         <div className="row">
           <label>
-            Начало
+            {t.dialog.start}
             <input type="datetime-local" value={form.start} onChange={(e) => set("start", e.target.value)} required />
           </label>
           <label>
-            Конец
+            {t.dialog.end}
             <input type="datetime-local" value={form.end} onChange={(e) => set("end", e.target.value)} required />
           </label>
         </div>
 
         <label>
-          Заметки
+          {t.dialog.notes}
           <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} maxLength={2000}
-                    placeholder={form.kind === "shift" ? "Ставка, место — пригодится финансовому трекеру" : ""} />
+                    placeholder={form.kind === "shift" ? t.dialog.shiftNotes : ""} />
         </label>
 
         {error && <p className="error">{error}</p>}
@@ -86,12 +87,12 @@ export function EventDialog({ initial, isNew, onSave, onDelete, onClose }: Props
         <div className="actions">
           {onDelete && (
             <button type="button" className="danger" disabled={busy} onClick={() => run(onDelete)}>
-              Удалить
+              {t.dialog.remove}
             </button>
           )}
           <span className="spacer" />
-          <button type="button" onClick={onClose} disabled={busy}>Отмена</button>
-          <button type="submit" className="primary" disabled={busy}>{isNew ? "Создать" : "Сохранить"}</button>
+          <button type="button" onClick={onClose} disabled={busy}>{t.dialog.cancel}</button>
+          <button type="submit" className="primary" disabled={busy}>{isNew ? t.dialog.create : t.dialog.save}</button>
         </div>
       </form>
     </div>

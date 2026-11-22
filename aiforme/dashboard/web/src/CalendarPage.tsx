@@ -4,11 +4,13 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ruLocale from "@fullcalendar/core/locales/ru";
+import enLocale from "@fullcalendar/core/locales/en-gb";
 import type {
   DateSelectArg, EventChangeArg, EventClickArg, EventInput as FcEvent, EventSourceFuncArg,
 } from "@fullcalendar/core";
 import { api, toLocal, type CalendarEvent, type EventInput } from "./api";
 import { EventDialog } from "./EventDialog";
+import { lang, t } from "./i18n";
 
 type Editing = { id: number | null; initial: EventInput };
 
@@ -26,7 +28,7 @@ export function CalendarPage() {
       setError(null);
       return events.map(toFc);
     } catch (e) {
-      setError(`Не удалось загрузить календарь: ${e instanceof Error ? e.message : e}`);
+      setError(t.calendar.loadFailed(e instanceof Error ? e.message : String(e)));
       return [];
     }
   }, []);
@@ -56,7 +58,7 @@ export function CalendarPage() {
       refetch();
     } catch (e) {
       change.revert();
-      setError(`Не удалось перенести: ${e instanceof Error ? e.message : e}`);
+      setError(t.calendar.moveFailed(e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -66,7 +68,7 @@ export function CalendarPage() {
       <FullCalendar
         ref={calendar}
         plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-        locale={ruLocale}
+        locale={lang === "ru" ? ruLocale : enLocale}
         initialView="timeGridWeek"
         headerToolbar={{ left: "prev,next today", center: "title", right: "timeGridDay,timeGridWeek,dayGridMonth" }}
         height="100%"
